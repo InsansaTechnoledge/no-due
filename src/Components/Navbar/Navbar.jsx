@@ -134,15 +134,26 @@ const Navbar = ({setIsLoggedIn}) => {
               ))}
             </ul>
             <div className="pt-3">
-              <a
+              {/* <a
                 href="#contact"
                 onClick={(e) => handleNavClick(e, "#contact")}
                 className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-blue-400 to-teal-600 p-[2px]"
-              >
-                <span className="w-full rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 text-center">
-                  Book Demo
-                </span>
-              </a>
+              > */}
+                <button onClick={() => setOpenLogin(true)} className="inline-flex  mr-1 cursor-pointer items-center rounded-full text-transparent bg-clip-text font-[font3] border-teal-400 border-2 py-2 px-3 bg-gradient-to-r from-blue-400 to-teal-600 p-[2px] focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                Login
+                </button>
+
+                <LoginModal
+                  open={openLogin}
+                  onClose={() => setOpenLogin(false)}
+                  setIsLoggedIn={setIsLoggedIn}
+                  onSubmit={(creds) => {
+                  console.log("Login with:", creds);
+                  // TODO: call your API; on success:
+                  setOpenLogin(false);
+                  }}
+                />
+              {/* </a> */}
             </div>
           </div>
         )}
