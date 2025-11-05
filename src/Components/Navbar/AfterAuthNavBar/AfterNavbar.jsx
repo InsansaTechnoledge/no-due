@@ -1,0 +1,180 @@
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { Bell, CheckCheck, X } from "lucide-react";
+import { notificationData } from "../../../utils/constants";
+
+const AfterNavbar = ({ setIsLoggedIn }) => {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState(notificationData || []);
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  const unreadCount = useMemo(
+    () => items.filter((n) => !n.read).length,
+    [items]
+  );
+
+  useEffect(() => {
+    const onDown = (e) => {
+      if (!open) return;
+      const el = dropdownRef.current;
+      const btn = buttonRef.current;
+      if (el && !el.contains(e.target) && btn && !btn.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e) => {
+      if (!open) return;
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const markAllRead = () =>
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+
+  return (
+    <nav className="hidden md:block sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b border-gray-200">
+      <div className="mx-auto max-w-7xl px-6 lg:px-10 py-4 flex items-center justify-between">
+        {/* Welcome */}
+        <h1 className="text-[17px] sm:text-lg font-semibold tracking-tight text-gray-800">
+          Welcome, <span className="text-gray-900">Tanmay Seth</span> 👋
+        </h1>
+
+        {/* Right cluster */}
+        <div className="flex items-center gap-4">
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              ref={buttonRef}
+              onClick={() => setOpen((s) => !s)}
+              aria-expanded={open}
+              aria-controls="notif-popover"
+              className="relative inline-flex items-center justify-center rounded-full p-2 ring-1 ring-gray-200 bg-white hover:bg-gray-50 transition shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            >
+              <Bell className="w-5 h-5 text-gray-700" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-semibold">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown */}
+            {open && (
+              <div
+                id="notif-popover"
+                ref={dropdownRef}
+                className="absolute right-0 mt-3 w-[22rem] origin-top-right"
+              >
+                {/* Arrow */}
+                <div className="flex justify-end pr-6">
+                  <div className="h-3 w-3 rotate-45 bg-white border border-gray-200 -mb-2 mr-2"></div>
+                </div>
+
+                <div className="rounded-xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-gray-50/80">
+                    <div className="text-sm font-semibold text-gray-800">
+                      Notifications
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={markAllRead}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 ring-1 ring-gray-200"
+                      >
+                        <CheckCheck className="w-4 h-4" />
+                        Mark all read
+                      </button>
+                      <button
+                        onClick={() => setOpen(false)}
+                        className="rounded-md p-1 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+                        aria-label="Close notifications"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* List */}
+                  <div className="max-h-72 overflow-y-auto">
+                    {items.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm text-gray-500">
+                        You’re all caught up 🎉
+                      </div>
+                    ) : (
+                      <ul className="divide-y divide-gray-100">
+                        {items.map((item, idx) => (
+                          <li
+                            key={idx}
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition"
+                          >
+                            <div className="relative">
+                              <img
+                                src={item.img}
+                                alt={item.name}
+                                className="w-10 h-10 rounded-full object-cover ring-1 ring-gray-200"
+                              />
+                              {!item.read && (
+                                <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-500 ring-2 ring-white" />
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm text-gray-700">
+                                <span className="font-semibold text-gray-900">
+                                  {item.name}
+                                </span>
+                                <span className="text-gray-600">: {item.msg}</span>
+                              </p>
+                              <div className="mt-1 text-xs text-gray-500">
+                                {item.time}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* <button
+                    className="w-full text-center px-4 py-2.5 text-sm font-medium text-green-700 hover:bg-green-50 transition"
+                    onClick={() => {
+                      setOpen(false);
+                    }}
+                  >
+                    View all notifications
+                  </button> */}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <span className="h-6 w-px bg-gray-200" aria-hidden />
+
+          {/* Profile / Logout */}
+          <button
+            onClick={() => setIsLoggedIn(false)}
+            className="group inline-flex items-center gap-3 rounded-full pl-3 pr-3.5 py-1.5 bg-white hover:bg-gray-50 ring-1 ring-gray-200 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+          >
+            <img
+              className="w-7 h-7 rounded-full ring-1 ring-gray-200"
+              src="https://randomuser.me/api/portraits/men/45.jpg"
+              alt="Profile"
+            />
+            <span className="text-sm font-medium text-gray-700 group-hover:text-green-700">
+              Logout
+            </span>
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default AfterNavbar;
