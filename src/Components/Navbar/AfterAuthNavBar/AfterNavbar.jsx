@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Bell, CheckCheck, X } from "lucide-react";
 import { notificationData } from "../../../utils/constants";
 
-const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfileDropdownOpen, setIsProfileDropdownOpen }) => {
+const AfterNavbar = ({ setIsLoggedIn }) => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState(notificationData || []);
   const buttonRef = useRef(null);
@@ -38,8 +38,6 @@ const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfil
   const markAllRead = () =>
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));
 
-  const user = { name: "tanmay shah", email: 'tanmay@example.com' };
-
   return (
     <nav className="hidden md:block sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b border-gray-200">
       <div className="mx-auto max-w-7xl px-6 lg:px-10 py-4 flex items-center justify-between">
@@ -57,7 +55,7 @@ const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfil
               onClick={() => setOpen((s) => !s)}
               aria-expanded={open}
               aria-controls="notif-popover"
-              className="relative hover:cursor-pointer inline-flex items-center justify-center rounded-full p-2 ring-1 ring-gray-200 bg-white hover:bg-gray-50 transition shadow-sm focus:outline-none"
+              className="relative inline-flex items-center justify-center rounded-full p-2 ring-1 ring-gray-200 bg-white hover:bg-gray-50 transition shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
             >
               <Bell className="w-5 h-5 text-gray-700" />
               {unreadCount > 0 && (
@@ -222,8 +220,11 @@ const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfil
           </div>
 
         </div>
+        )}
+
+        </div>
+        {/* </div> */}
       </div>
-    
     </nav>
   );
 };
