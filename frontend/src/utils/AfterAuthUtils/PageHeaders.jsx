@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 const PageHeaders = ({header , subheader , handleOnClick , navigate , buttonName , navigateName}) => {
   return (
-    <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 w-full">
     <div>
       <h1 className="component-header">{header}</h1>
       <p className="component-subheader">{subheader}</p>

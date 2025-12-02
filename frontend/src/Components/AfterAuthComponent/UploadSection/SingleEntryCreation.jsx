@@ -9,7 +9,7 @@ const SingleEntryCreation = ({setSelectedCustomer , selectedCustomer}) => {
     const navigate = useNavigate();
 
   return (
-    <div>
+    <div className='min-w-0 w-full'>
       {/* Page Header */}
       <PageHeaders
         header="Create New Entry"

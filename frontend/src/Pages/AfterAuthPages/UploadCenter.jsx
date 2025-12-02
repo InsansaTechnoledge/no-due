@@ -12,7 +12,7 @@ const UploadCenter = () => {
 
   console.log(CustomerNames)
   return (
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div className="max-w-7xl mx-auto md:px-4 px-6 lg:px-8 py-6">
     {
       inverted ? (
         <SingleEntryCreation selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}/>

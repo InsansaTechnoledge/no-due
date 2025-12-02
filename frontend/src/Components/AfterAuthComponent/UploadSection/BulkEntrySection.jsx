@@ -4,7 +4,7 @@ import { UploadCloud, FileSpreadsheet } from 'lucide-react'
 
 const BulkEntrySection = ({selectedFile , setSelectedFile}) => {
   return (
-    <div>
+    <div className='min-w-0 w-full'>
         <PageHeaders 
         header={'Upload Bulk Entries'} 
         subheader={'Import multiple customer records at once using CSV or Excel files'} 
@@ -15,9 +15,9 @@ const BulkEntrySection = ({selectedFile , setSelectedFile}) => {
         <div className="flex items-center justify-center md:w-6xl w-full mt-6">
             <label 
               htmlFor="dropzone-file" 
-              className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors group"
+              className="flex flex-col items-center justify-center w-1/2 h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors group"
             >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-5">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 px-5 ">
                     
                     <div className="mb-4 p-3 rounded-full bg-green-50 group-hover:bg-green-100 transition-colors">
                       <UploadCloud className="w-8 h-8 text-green-600"/>

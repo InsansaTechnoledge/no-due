@@ -40,9 +40,9 @@ const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfil
 
   const user = {name:"Tanmay Singh", email:"tanmay@singh.com"}
 
-  return (
+  return ( 
     <nav className="hidden md:block sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b border-gray-200">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10 py-4 flex items-center justify-between">
+      <div className="mx-auto max-w-7xl px-36 lg:px-10 py-4 flex items-center justify-between">
         {/* Welcome */}
         <h1 className="text-[17px] sm:text-lg font-semibold tracking-tight text-gray-800">
           Welcome, <span className="text-gray-900">Tanmay Seth</span> 👋

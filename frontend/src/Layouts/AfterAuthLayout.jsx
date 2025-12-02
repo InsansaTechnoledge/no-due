@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import SideBar from "../Components/Navbar/AfterAuthNavBar/SideBar";
 import AfterNavbar from "../Components/Navbar/AfterAuthNavBar/AfterNavbar";
@@ -10,6 +10,7 @@ const AfterAuthLayout = ({ setIsLoggedIn, isLoggedIn }) => {
   const [ActivePage, setActivePage] = useState("customer-master");
   const profileRef = useRef(null);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
 
 
@@ -22,6 +23,16 @@ const AfterAuthLayout = ({ setIsLoggedIn, isLoggedIn }) => {
    const closeProfileDropdown = () => {
     setIsProfileDropdownOpen(false);
   };
+
+  const handleCollapse = ()=>{
+    setIsCollapsed(prev=>{
+      const newState = !prev;
+      localStorage.setItem('sidebar-collapsed', newState);
+      return newState;
+    });
+  }
+
+
   useEffect(() => {
   const handleMouseClick = (e) => {
     if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -30,33 +41,76 @@ const AfterAuthLayout = ({ setIsLoggedIn, isLoggedIn }) => {
     }
   };
 
-  window.addEventListener("mousedown", handleMouseClick, false);
+  window.addEventListener("mousedown", handleMouseClick, false); //event propogation
 
   return () => {
     window.removeEventListener("mousedown", handleMouseClick);
   };
 }, []);
 
+useEffect(()=>{
+  if(window.innerWidth<768){
+    //on mobile make it false
+    setIsCollapsed(false);
+  }
+})
+
+useLayoutEffect(()=>{
+  
+    const isSidebarCollapsed = localStorage.getItem('sidebar-collapsed');
+    if(isSidebarCollapsed!==null){
+      setIsCollapsed(isSidebarCollapsed==='true') // using according to the localstorage
+    }
+  
+})
+
+
+
   return (
-    <div className="min-h-screen ">
-      {/* Sidebar */}
-      <div className="fixed h-full z-40">
-        <SideBar setIsLoggedIn={setIsLoggedIn} ActivePage={ActivePage} />
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 sm:ml-64 sm:mt-20">
+   <div className="flex h-screen overflow-hidden">
+    {/* Sidebar wrapper: fixed height, not scrollable */}
+    <div
+      className={`
         
-        <header className="fixed top-0 left-64 right-0 z-30 bg-white shadow-sm border-b border-gray-200">
-          <AfterNavbar setIsLoggedIn={setIsLoggedIn} profileRef={profileRef} isProfileDropdownOpen={isProfileDropdownOpen} setIsProfileDropdownOpen={setIsProfileDropdownOpen} />
-        </header>
+        md:w-[${isCollapsed ? "60px" : "clamp(100px,20vw,200px)"}] top-0 h-full z-40 transition-all   h-screen
+        sticky top-0
+        bg-white
+        transition-all
+      `}
+    >
+      {/* Sidebar inner scroll area: overflow-y-auto */}
 
-        {/* Page Content */}
-        <main className="pt-20 p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          <Outlet context={{ isLoggedIn, setIsLoggedIn }} />
-        </main>
+      <div className="h-full  sidebar-scroll overflow-visible">
+        <SideBar
+          setIsLoggedIn={setIsLoggedIn}
+          ActivePage={ActivePage}
+          handleCollapse={handleCollapse}
+          isCollapsed={isCollapsed}
+        />
       </div>
     </div>
+
+    {/* MAIN CONTENT AREA (scrollable) */}
+    <div className="flex flex-col flex-1 overflow-y-auto sidebar-scroll min-w-0">
+
+      {/* Navbar */}
+      <header className="sticky top-0 z-30 mt-10 md:mt-0 bg-white shadow-sm ">
+        <AfterNavbar
+          setIsLoggedIn={setIsLoggedIn}
+          profileRef={profileRef}
+          isProfileDropdownOpen={isProfileDropdownOpen}
+          setIsProfileDropdownOpen={setIsProfileDropdownOpen}
+        />
+      </header>
+
+      {/* Page Content */}
+      <main className="p-4 md:p-8 w-full">
+        <div className="max-w-7xl mx-auto">
+          <Outlet context={{ isLoggedIn, setIsLoggedIn }} />
+        </div>
+      </main>
+    </div>
+  </div>
   );
 };
 
