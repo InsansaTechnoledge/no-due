@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { connection } from "../database/databaseConfig";
+import { connection } from "../database/databaseConfig.js";
 
 const customerSchema = new Schema({
     customerId: {

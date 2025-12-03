@@ -1,5 +1,5 @@
 class APIResponse {
-    constructor(status, data, message = 'success') {
+    constructor(status, message = 'success', data = undefined) {
         this.status = status;
         this.data = data;
         this.message = message;
@@ -7,12 +7,18 @@ class APIResponse {
     }
 
     toJSON() {
-        return {
+        const response =  {
             status: this.status,
-            data: this.data,
             message: this.message,
             success: this.success,
         };
+        //sometime data is optional like 404, 403
+        if(this.data!==undefined && this.data!==null){
+            response.data = this.data;
+        }
+
+        return response;
+
     }
 
     send(res) {
