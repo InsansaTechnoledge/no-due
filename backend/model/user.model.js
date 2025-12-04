@@ -1,6 +1,7 @@
-import { Schema } from 'mongoose';
+import { Schema, mongoose } from 'mongoose';
 import validator from 'validator';
-import { connection } from '../database/databaseConfig';
+import { connection } from '../database/databaseConfig.js';
+import bcrypt from "bcrypt";
 
 const addressSchema = new Schema({
     street: {
@@ -135,8 +136,9 @@ userSchema.pre('save', function (next) {
         this.password = bcrypt.hashSync(this.password, salt);
         return next();
     } catch (err) {
-        return next(err);
+        return err;
     }
+
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {

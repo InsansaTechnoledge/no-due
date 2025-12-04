@@ -73,11 +73,14 @@ const customerSchema = new Schema({
         default: "other",
     },
     CustomerOfComapny:{
+        //foreign key related to user
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
     }
-}, { timestamps: true });
+}, { timestamps: true,
+    _id: false
+ });
 const Customer = connection.model('Customer', customerSchema);
 
 export default Customer;
