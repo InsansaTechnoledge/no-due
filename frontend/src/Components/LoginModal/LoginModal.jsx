@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate} from "react-router-dom";
+import { registerUser } from "../../utils/service/userService";
 
 export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
   const dialogRef = useRef(null);
@@ -10,12 +11,13 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
   // Form fields
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
-  const [businessName , setBuisnessName] = useState("");
+  const [businessName , setBuisnessName] = useState("")
   const [phoneNumber , setPhoneNumber] = useState("");
   const [lastName, setLastName] = useState("");
   const [pw, setPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [err, setErr] = useState("");
+ 
 
   useEffect(() => {
     if (!open) return;
@@ -89,12 +91,14 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
 
       
 
-      setTimeout(() => {
-        setIsLoggedIn(true)
-        navigate('/nodue/customer-master') // text navigation
+      // setTimeout(() => {
+      //   setIsLoggedIn(true)
+      //   navigate('/nodue/customer-master') // text navigation
        
-      }, 1000)
+      // }, 1000)
     }
+
+    //wait for the server response then respone according to it
   };
 
   if (!open) return null;
@@ -276,10 +280,21 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
 function Demo() {
   const [open, setOpen] = useState(true);
   
-  const handleSubmit = (data) => {
+  const handleSubmit = async(data) => {
     console.log('Form submitted:', data);
-    alert(`${data.type === 'signup' ? 'Sign up' : 'Login'} successful!\n\nEmail: ${data.email}`);
-    setOpen(false);
+
+    if(data.type=="signup"){
+      console.log("signup is begin called");
+      // const response = register(data);
+      console.log(response);
+    }else{
+      console.log("sign in");
+      //login
+    }
+
+    
+    // alert(`${data.type === 'signup' ? 'Sign up' : 'Login'} successful!\n\nEmail: ${data.email}`);
+    // setOpen(false);
   };
 
   return (

@@ -3,6 +3,9 @@ import React, { useState, useCallback } from "react";
 import logo from "../../assets/logo.png";
 import LoginModal from "../LoginModal/LoginModal";
 import { href, Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../../utils/service/userService";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 
 const links = [
   { href: "/",     label: "Home" },
@@ -19,6 +22,7 @@ const Navbar = ({setIsLoggedIn}) => {
   const [openLogin , setOpenLogin] = useState(false);
 
   const navigate = useNavigate();
+  const {login, register} = useAuth();
 
 
   const handleNavClick = useCallback((e, href) => {
@@ -44,6 +48,44 @@ const Navbar = ({setIsLoggedIn}) => {
     navigate(href);
     setOpen(false);
   }, [navigate]);
+
+  const handleLogin = async (data) => {
+  if (data.type === 'signup') {
+    const filteredData = {
+      name: `${data.firstName}${data.lastName}`,
+      email: data.email,
+      password: data.password
+    };
+
+    try {
+      const response = await register(filteredData);
+      console.log(response);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Signup failed");
+    }
+
+  } else {
+    // LOGIN FLOW
+    try {
+      const response = await login(data);
+
+      if (!response.data.success) {
+        toast.error("Login failed");
+        return;
+      }
+
+      toast.success("Login successful");
+
+      setTimeout(() => navigate("/nodue"), 1500);
+
+    } catch (error) {
+
+      toast.error(error.response?.data?.message || "Invalid credentials");
+    }
+  }
+};
+
+
   return (
     <header className="sticky top-0 z-50 py-4 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 ">
       <nav className="mx-auto px-4 sm:px-6 lg:px-14">
@@ -89,11 +131,7 @@ const Navbar = ({setIsLoggedIn}) => {
                 open={openLogin}
                 onClose={() => setOpenLogin(false)}
                 setIsLoggedIn={setIsLoggedIn}
-                onSubmit={(creds) => {
-                console.log("Login with:", creds);
-                // TODO: call your API; on success:
-                setOpenLogin(false);
-                }}
+                onSubmit={handleLogin}
                />
           </div>
 

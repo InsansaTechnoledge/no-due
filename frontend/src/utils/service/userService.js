@@ -8,3 +8,17 @@ export const getUserProfile = async () => {
         throw error;
     }
 };
+
+
+export const registerUser = async(data)=>{
+    try {
+        const response = await api.post("/api/v1/auth/register", data); //check how body will be passed
+        
+        return response.data;
+    } catch (error) {
+        console.log(error);
+        throw error;
+        
+    }
+}
+
