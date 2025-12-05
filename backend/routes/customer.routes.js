@@ -4,7 +4,7 @@ import { createCustomer, deleteCustomers, getCustomers, getCustomersById, update
 const router = exapress.Router();
 
 
-router.get("/", getCustomers);
+router.get("/", getCustomers); //get all customers
 router.delete("/", deleteCustomers);
 router.post("/", createCustomer);
 router.get("/:customerId", getCustomersById);

@@ -2,10 +2,6 @@ import { Schema } from "mongoose";
 import { connection } from "../database/databaseConfig.js";
 
 const customerSchema = new Schema({
-    customerId: {
-        type: String,
-        required: true,
-    },
     name: {
         type: String,
         required: true,
@@ -79,7 +75,7 @@ const customerSchema = new Schema({
         required: true,
     }
 }, { timestamps: true,
-    _id: false
+    // _id: false
  });
 const Customer = connection.model('Customer', customerSchema);
 

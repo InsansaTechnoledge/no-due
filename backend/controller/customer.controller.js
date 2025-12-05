@@ -5,27 +5,51 @@ import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils.js";// 
 export const createCustomer = async (req, res) => {
     try {
         //client have to send required data otherwise it wil produce error
-        //have to implement here bulk update using csv also here, currently supporting one by one
+        
         const customerData = req.body;
-        const newCustomer = new Customer(customerData);
-        await newCustomer.save();
-        return new APIResponse(201, "Customer created successfully", newCustomer).send(res);
+        if(Array.isArray(customerData)){
+            // bulk upload
+            // [{},{}]
+            //ordered: false for continue even single row fail. default is true
+            const insertedData = await Customer.insertMany(customerData); 
+            console.log(insertedData);
+
+            return new APIResponse(201, insertedData, `${insertedData.length} customers data Inserted`).send(res);
+
+        }else{
+            //normal creation
+            // {}
+            const newCustomer = new Customer(customerData);
+            await newCustomer.save();
+            return new APIResponse(201, newCustomer, "Customer created successfully").send(res);
+        }
+
     } catch (error) {
-      return new APIError(500, "Failed to create customer", error).send(res);
+      return new APIError(500, error, "Failed to create customer").send(res);
 }
 };
 
 export const getCustomers = async(req, res)=>{
     try {
+        console.log("customers call");
+        //user will get thair own customer only
         const {page = 1 , limit = 10} = req.query;
         const offset = (page - 1)*limit;
 
-        const customers = await Customer.find({}).skip(offset).limit(limit); 
+        const userId = '6931a1b5ea27b875a683e9cd';
 
-        return new APIResponse(200, "Fetched all customers", customers).send(res); // have to check response 
+        const query = {CustomerOfComapny:userId}; //basically finters
+    
+        const customers = await Customer.find(query).skip(offset).limit(limit); 
+
+        
+        const total = await Customer.countDocuments(query);
+
+
+        return new APIResponse(200, {customers, total, page, limit, totalPages: Math.ceil(total/limit)}, "Fetched all customers", ).send(res); // have to check response 
         
     } catch (error) {
-        return new APIError(500, "Failed to fetch the customers data", error).send(res); // have to check res
+        return new APIError(500, error, "Failed to fetch the customers data").send(res); // have to check res
         
     }
 }
@@ -34,21 +58,22 @@ export const getCustomers = async(req, res)=>{
 //doubt: for customer there is _id and CustomerId do i need here boolean check
 export const getCustomersById = async(req, res)=>{
     try {
+        //only users's customer should be queried
         const {customerId } = req.params;
         
         const customer = await Customer.find({customerId: customerId});
     
 
         if(!customer.length){
-            return new APIResponse(404, `No customer found for this Id ${customerId}`).send(res); 
+            return new APIResponse(404, null, `No customer found for this Id ${customerId}`).send(res); 
         }
         
-        return new APIResponse(200, "Customer found", customer).send(res); 
+        return new APIResponse(200, customer, "Customer found",).send(res); 
 
         
     } catch (error) {
         
-        return new APIError(500, "Failed to get Customer by given CustomerId", error).send(res);
+        return new APIError(500, error, "Failed to get Customer by given CustomerId",).send(res);
     }
 }
 
@@ -68,16 +93,16 @@ export const deleteCustomers = async(req, res)=>{
         const customer = await Customer.find(customerId);
 
         if(!customer){
-            return new APIResponse(404, "Customer not found").send(res);
+            return new APIResponse(404, null, "Customer not found").send(res);
         }
 
         const result = await Customer.findByIdAndDelete(customerId);
 
-        return new APIResponse(200, `Customer with this Id: ${customerId} is deleted`, result).send(res); 
+        return new APIResponse(200, result, `Customer with this Id: ${customerId} is deleted`,).send(res); 
 
 
     } catch (error) {
-        return new APIError(500, "Failed to delete customer", error).send(res);
+        return new APIError(500, error, "Failed to delete customer").send(res);
         
     }
 }

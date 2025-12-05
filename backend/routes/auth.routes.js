@@ -11,7 +11,7 @@ router.get("/google", passport.authenticate("google", {scope:["profile","email"]
 router.get("/google/callback", passport.authenticate("google", {session:false}), handleGoogleAuth);
 router.post("/login", loginUser);
 router.post("/register", registerUser);
-router.get("/logout", logoutUser);
+router.post("/logout", logoutUser);
 router.get("/me", isAuthenticated, myProfile);
 
 //just for testing

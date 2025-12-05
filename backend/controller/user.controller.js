@@ -102,6 +102,18 @@ export const loginUser = async(req, res)=>{
 
 export const logoutUser = async(req, res)=>{
     // have to free the user session
+  try {
+    req.session.destroy();
+
+    req.session = null // Deletes the cookie.
+
+    res.clearCookie("connect.sid"); // clears session cookie
+    return new APIResponse(200, "Logout successfully").send(res);
+
+  } catch (error) {
+    console.log(error);
+    return new APIError(500, "Failed to Logout").send(res);
+  }
 
     
 }
