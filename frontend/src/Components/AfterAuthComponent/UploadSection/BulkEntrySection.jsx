@@ -2,10 +2,13 @@ import React, { useEffect, useRef, useState} from 'react'
 import PageHeaders from '../../../utils/AfterAuthUtils/PageHeaders'
 import { UploadCloud, FileSpreadsheet } from 'lucide-react'
 import PreviewCustomerModel from "./PreviewCustomerModel"
+import { createCustomers } from '../../../utils/service/customerService'
+import { toast } from 'react-toastify'
 
-const BulkEntrySection = ({selectedFile , setSelectedFile}) => {
+const BulkEntrySection = () => {
 
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [previewData, setPreviewData] = useState({});
   const previewRef = useRef();
 
@@ -56,8 +59,23 @@ const csvFileToJson = (file) => {
   reader.readAsText(file);
 };
 
-  const handleSubmitEntry = ()=>{
-    console.log("after preview sumit is clicked");
+  const handleSubmitEntry = async()=>{
+    // console.log("after preview sumit is clicked");
+    try {
+      const response = await createCustomers(previewData); 
+      if(response.success){
+      toast.success(response?.message);
+      setTimeout(()=>{
+        setShowPreview(false);
+      },2000)
+    }
+      
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to create bulk entries");
+      
+    }
+
   }
   return (
     <div className='min-w-0 w-full'>

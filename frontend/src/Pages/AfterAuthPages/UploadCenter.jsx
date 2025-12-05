@@ -5,7 +5,6 @@ import BulkEntrySection from '../../Components/AfterAuthComponent/UploadSection/
 import SingleEntryCreation from '../../Components/AfterAuthComponent/UploadSection/SingleEntryCreation';
 
 const UploadCenter = () => {
-  const [selectedFile, setSelectedFile] = useState(null);
   const [inverted , setInverted] = useState(false);
 
 
@@ -15,7 +14,7 @@ const UploadCenter = () => {
       inverted ? (
         <SingleEntryCreation />
       ) : (
-        <BulkEntrySection selectedFile={selectedFile} setSelectedFile={setSelectedFile}/>
+        <BulkEntrySection />
       )
     }
 
@@ -36,7 +35,7 @@ const UploadCenter = () => {
 
     {
       inverted ? (
-        <BulkEntrySection selectedFile={selectedFile} setSelectedFile={setSelectedFile}/>
+        <BulkEntrySection />
       ) : (
         <SingleEntryCreation />
       )
