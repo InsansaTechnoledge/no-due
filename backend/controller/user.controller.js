@@ -1,5 +1,5 @@
-import User from "../model/user.model";
-import { APIError } from "../utils/ResponseAndError/ApiError.utils";
+import User from "../model/user.model.js";
+import { APIError } from "../utils/ResponseAndError/ApiError.utils.js";
 
 export const registerUser = async (req, res) => {
     const userData  = req.body;

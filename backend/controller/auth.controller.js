@@ -1,4 +1,4 @@
-import passport from "../utils/passportSetup/passportSetup";
+import passport from "../utils/passportSetup/passportSetup.js";
 import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils.js";
 import { APIError } from "../utils/ResponseAndError/ApiError.utils.js";
 

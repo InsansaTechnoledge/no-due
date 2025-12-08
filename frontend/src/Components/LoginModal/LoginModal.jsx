@@ -1,21 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { loginUser, registerUser } from "../../utils/service/userService";
 
-export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
+export default function LoginModal({ open, onClose, setIsLoggedIn }) {
   const dialogRef = useRef(null);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
-  
+  const navigate = useNavigate();
+
   // Form fields
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
-  const [businessName , setBuisnessName] = useState("");
-  const [phoneNumber , setPhoneNumber] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [lastName, setLastName] = useState("");
   const [pw, setPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const [err, setErr] = useState("");
+
+
+  const [err, setErr] = useState({});
 
   useEffect(() => {
     if (!open) return;
@@ -26,10 +30,16 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  const onSubmit = async (data) => {
+    console.log("Form submitted with data:", data);
+
+
+  };
+
   const resetForm = () => {
     setEmail("");
     setFirstName("");
-    setBuisnessName("");
+    setBusinessName("");
     setPhoneNumber("");
     setLastName("");
     setPw("");
@@ -44,57 +54,126 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
     resetForm();
   };
 
-  const navigate = useNavigate();
+  const validateField = (field, value, pw = "", confirmPw = "") => {
+    value = value?.trim();
 
-  const submit = (e) => {
-    e?.preventDefault?.();
-    setErr("");
+    switch (field) {
+      // FIRST NAME
+      case "firstName":
+        if (!value) return "First name is required.";
+        if (value.length < 2) return "First name must be at least 2 characters.";
+        if (!/^[a-zA-Z]+$/.test(value))
+          return "First name should contain only letters.";
+        return "";
+
+      // LAST NAME
+      case "lastName":
+        if (!value) return "Last name is required.";
+        if (value.length < 2) return "Last name must be at least 2 characters.";
+        if (!/^[a-zA-Z]+$/.test(value))
+          return "Last name should contain only letters.";
+        return "";
+
+      // BUSINESS NAME
+      case "businessName":
+        if (!value) return "Business name is required.";
+        if (value.length < 3)
+          return "Business name must be at least 3 characters.";
+        if (value.length > 70)
+          return "Business name can be at most 70 characters.";
+        return "";
+
+      // EMAIL
+      case "email":
+        if (!value) return "Email is required.";
+        if (
+          !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)
+        )
+          return "Please enter a valid email address.";
+        return "";
+
+      // PASSWORD
+      case "password":
+        if (!value) return "Password is required.";
+        if (
+          !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(value)
+        )
+          return "Password must have 8+ chars, 1 uppercase, 1 lowercase, 1 number & 1 symbol.";
+        return "";
+
+      // CONFIRM PASSWORD
+      case "confirmPw":
+        if (value !== pw) return "Passwords do not match.";
+        return "";
+
+      // PHONE
+      case "phoneNumber":
+        if (!value) return ""; // optional
+        if (!/^(\+\d{1,3}[- ]?)?\d{10}$/.test(value))
+          return "Please enter a valid phone number.";
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+
+    const newErrors = {
+      firstName: isSignUp ? validateField("firstName", firstName) : "",
+      lastName: isSignUp ? validateField("lastName", lastName) : "",
+      businessName: isSignUp ? validateField("businessName", businessName) : "",
+      phoneNumber: isSignUp ? validateField("phoneNumber", phoneNumber) : "",
+      email: validateField("email", email),
+      password: validateField("password", pw),
+      confirmPw: isSignUp ? validateField("confirmPw", confirmPw, pw) : "",
+    };
+
+    setErr(newErrors);
+
+    if (Object.values(newErrors).some((err) => err)) {
+      return; // Stop submit
+    }
 
     if (!email.trim() || !pw.trim()) {
-      setErr("Please fill in all required fields.");
+      // setErr("Please fill in all required fields.");
       return;
     }
 
-    if (isSignUp) {
-      if (!firstName.trim() || !lastName.trim()) {
-        setErr("Please enter your first and last name.");
-        return;
+    try {
+      if (isSignUp) {
+        const response = await registerUser({
+          email: email.trim(),
+          fname: firstName.trim(),
+          phoneNumber: phoneNumber.trim(),
+          businessName: businessName.trim(),
+          lname: lastName.trim(),
+          password: pw
+        });
+        console.log("User registered successfully:", response);
+        if (response.status === 201) {
+          setIsSignUp(false);
+          resetForm();
+        }
       }
-      if (pw !== confirmPw) {
-        setErr("Passwords don't match.");
-        return;
+      else {
+
+        const response = await loginUser({
+          email: email.trim(),
+          password: pw
+        });
+        if (response.status === 200) {
+          setIsLoggedIn(true);
+          onClose();
+          navigate('/customer-master');
+        }
       }
-      if (pw.length < 8) {
-        setErr("Password must be at least 8 characters.");
-        return;
-      }
-
-      
-
-      onSubmit?.({ 
-        type: 'signup',
-        email: email.trim(), 
-        firstName: firstName.trim(),
-        phoneNumber: phoneNumber.trim(),
-        businessName: businessName.trim(),
-        lastName: lastName.trim(),
-        password: pw 
-      });
-    } else {
-      onSubmit?.({ 
-        type: 'login',
-        email: email.trim(), 
-        password: pw 
-      });
-
-      
-
-      setTimeout(() => {
-        setIsLoggedIn(true)
-        navigate('/nodue/customer-master') // text navigation
-       
-      }, 1000)
-    }
+    } catch (err) {
+      console.error("Error during form submission:", err);
+      setErr(err.response?.data?.errors[0] || "An error occurred. Please try again.");
+    };
   };
 
   if (!open) return null;
@@ -133,73 +212,105 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
                 <input
                   type="text"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFirstName(val);
+                    setErr(prev => ({ ...prev, firstName: validateField("firstName", val) }));
+                  }}
                   onKeyDown={(e) => {
-                if (e.key === 'Enter') submit(e);
-              }}
-              className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                    if (e.key === 'Enter') submit(e);
+                  }}
+                  className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                   placeholder="First name"
                 />
+                {err.firstName && <p className="text-xs text-red-600">{err.firstName}</p>}
+
               </div>
               <div className="flex-1">
                 <input
                   type="text"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    setErr(prev => ({ ...prev, lastName: validateField("lastName", e.target.value) }));
+                  }}
                   className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                   placeholder="Last name"
                 />
+                {err.lastName && <p className="text-xs text-red-600">{err.lastName}</p>}
+
               </div>
 
-              
-              
+
+
             </div>
           )}
           {
             isSignUp && (
-                <>
-                    <div>
-                        <input
-                            type="text"
-                            value={businessName}
-                            onChange={(e) => setBuisnessName(e.target.value)}
-                            className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
-                            placeholder="Business Name"
-                        />
-                    </div>
+              <>
+                <div>
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => {
+                      setBusinessName(e.target.value);
+                      setErr(prev => ({ ...prev, businessName: validateField("businessName", e.target.value) }));
+                    }}
+                    className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                    placeholder="Business Name"
+                  />
+                  {err.businessName && <p className="text-xs text-red-600">{err.businessName}</p>}
 
-                    <div>
-                        <input
-                            type="text"
-                            value={phoneNumber}
-                            onChange={(e) => setPhoneNumber(e.target.value)}
-                            className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
-                            placeholder="Phone Number"
-                        />
-                    </div>
+                </div>
 
-                   
-                </>
+                <div>
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPhoneNumber(e.target.value);
+                      setErr(prev => ({ ...prev, phoneNumber: validateField("phoneNumber", e.target.value) }));
+                    }}
+                    className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                    placeholder="Phone Number"
+                  />
+                  {err.phoneNumber && <p className="text-xs text-red-600">{err.phoneNumber}</p>}
+
+                </div>
+
+
+              </>
             )
           }
 
-            <div>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
-                        placeholder="Email"
-                    />
-            </div>
+          <div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErr(prev => ({ ...prev, email: validateField("email", e.target.value) }));
+              }}
+              className="w-full rounded border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+              placeholder="Email"
+            />
+            {err.email && <p className="text-xs text-red-600">{err.email}</p>}
+
+          </div>
           <div className="relative">
             <input
               type={showPw ? "text" : "password"}
               value={pw}
-              onChange={(e) => setPw(e.target.value)}
+              onChange={(e) => {
+                setPw(e.target.value);
+                setErr(prev => ({ ...prev, password: validateField("password", e.target.value) }));
+              }}
               className="w-full rounded border border-gray-300 px-4 py-3 pr-16 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               placeholder="Password"
             />
+            {err.password && <p className="text-xs text-red-600">{err.password}</p>}
+
             <button
               type="button"
               onClick={() => setShowPw((s) => !s)}
@@ -214,10 +325,15 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
               <input
                 type={showConfirmPw ? "text" : "password"}
                 value={confirmPw}
-                onChange={(e) => setConfirmPw(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPw(e.target.value);
+                  setErr(prev => ({ ...prev, confirmPw: validateField("confirmPw", e.target.value, pw) }));
+                }}
                 className="w-full rounded border border-gray-300 px-4 py-3 pr-16 text-sm outline-none transition focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                 placeholder="Confirm password"
               />
+              {err.confirmPw && <p className="text-xs text-red-600">{err.confirmPw}</p>}
+
               <button
                 type="button"
                 onClick={() => setShowConfirmPw((s) => !s)}
@@ -236,12 +352,6 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
             </div>
           )}
 
-          {err && (
-            <div className="rounded bg-red-50 px-3 py-2">
-              <p className="text-sm text-red-600">{err}</p>
-            </div>
-          )}
-
           <div className="flex items-center justify-between gap-3 pt-4">
             <button
               type="button"
@@ -250,7 +360,7 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
             >
               {isSignUp ? "Sign in instead" : "Create account"}
             </button>
-            
+
             <button
               onClick={submit}
               className="rounded bg-teal-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-teal-700 transition"
@@ -261,7 +371,11 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
         </div>
 
         <button
-          onClick={onClose}
+          onClick={() => {
+            setErr("");
+            resetForm();
+            onClose()
+          }}
           className="absolute right-4 top-4 rounded-full p-2 text-gray-500 hover:bg-gray-100"
           aria-label="Close"
         >
@@ -272,34 +386,3 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
   );
 }
 
-// Demo wrapper
-function Demo() {
-  const [open, setOpen] = useState(true);
-  
-  const handleSubmit = (data) => {
-    console.log('Form submitted:', data);
-    alert(`${data.type === 'signup' ? 'Sign up' : 'Login'} successful!\n\nEmail: ${data.email}`);
-    setOpen(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-50 p-8">
-      <div className="mx-auto max-w-2xl">
-        <h1 className="mb-4 text-3xl font-bold text-gray-800">Google-Style Auth Modal Demo</h1>
-        <p className="mb-6 text-gray-600">Click the button below to open the authentication modal</p>
-        <button
-          onClick={() => setOpen(true)}
-          className="rounded-lg bg-teal-600 px-6 py-3 font-semibold text-white shadow-lg hover:bg-teal-700"
-        >
-          Open Auth Modal
-        </button>
-      </div>
-      
-      <AuthModal 
-        open={open} 
-        onClose={() => setOpen(false)}
-        onSubmit={handleSubmit}
-      />
-    </div>
-  );
-}

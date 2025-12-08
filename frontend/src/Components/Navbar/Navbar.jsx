@@ -89,11 +89,6 @@ const Navbar = ({setIsLoggedIn}) => {
                 open={openLogin}
                 onClose={() => setOpenLogin(false)}
                 setIsLoggedIn={setIsLoggedIn}
-                onSubmit={(creds) => {
-                console.log("Login with:", creds);
-                // TODO: call your API; on success:
-                setOpenLogin(false);
-                }}
                />
           </div>
 
@@ -147,11 +142,6 @@ const Navbar = ({setIsLoggedIn}) => {
                   open={openLogin}
                   onClose={() => setOpenLogin(false)}
                   setIsLoggedIn={setIsLoggedIn}
-                  onSubmit={(creds) => {
-                  console.log("Login with:", creds);
-                  // TODO: call your API; on success:
-                  setOpenLogin(false);
-                  }}
                 />
               {/* </a> */}
             </div>

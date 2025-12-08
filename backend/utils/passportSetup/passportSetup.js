@@ -1,7 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as LocalStrategy} from 'passport-local';
-import User from '../../model/user.model';
+import User from '../../model/user.model.js';
 
 passport.use(new LocalStrategy({
     usernameField: 'email',
