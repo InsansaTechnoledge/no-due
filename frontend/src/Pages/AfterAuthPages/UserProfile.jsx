@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { User, Mail, Phone, Building2, MapPin, Globe, Shield, Lock, Eye, EyeOff, Camera, Trash2, Save, Bell, Crown, CreditCard, QrCode, LogOut, CheckCircle2, Download } from "lucide-react";
-import { getUserProfile } from "../../utils/service/userService";
+
 
 //
 
