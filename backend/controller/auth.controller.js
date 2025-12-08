@@ -46,6 +46,12 @@ export const logout = (req,res) => {
     });
 };
 
+const setMaxAge = (req, rememberMe) => {
+  req.session.cookie.maxAge = rememberMe
+    ? 7 * 24 * 60 * 60 * 1000 // 7 days
+    : 24 * 60 * 60 * 1000;    // 1 day
+};
+
 export const localLogin = (req,res) => {
     passport.authenticate('local',(err,user,info) => {
         if(err){
@@ -54,11 +60,36 @@ export const localLogin = (req,res) => {
         if(!user){
             return new APIError(401,[info?.message || 'User Not Found']).send(res);
         }
-        req.login(user, (err) => {
+        const rememberMe = !!req.body.rememberMe;
+        const lastLogin = Date.now();
+
+        req.session.regenerate((err) => {
             if(err){
-                return new APIError(500,['Login failed']).send(res);
+                return new APIError(500,['Session regeneration failed']).send(res);
             }
-            return new APIResponse(200,{user},'Login successful').send(res);
+            req.login(user,async (err) => {
+                if(err){
+                    return new APIError(500,['Login failed']).send(res);
+                }
+                setMaxAge(req, rememberMe);
+                try{
+                    await new Promise((resolve, reject) => {
+                        req.session.save((err) => {
+                            if (err) return reject(err);
+                            resolve();
+                        });
+                        const currenySid = req.sessionID;
+                        //to update the last login time, and destroy the other sessions
+                        //call this 
+
+                        const id = String(user._id || user.id);
+                        return new APIResponse(200,  { user: { id } },'Login successful').send(res);
+                    });
+
+                }catch(err){
+                    return new APIError(500,['Session save failed']).send(res);
+                }
+            });
         });
     })(req,res);
 };

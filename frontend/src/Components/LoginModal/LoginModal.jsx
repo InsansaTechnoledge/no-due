@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser, registerUser } from "../../utils/service/userService";
+import { registerUser } from "../../utils/service/userService";
+import { loginUser } from "../../utils/service/authService";
+import LoadingSkeleton from "../../utils/LoadingSkeleton";
 
 export default function LoginModal({ open, onClose, setIsLoggedIn }) {
   const dialogRef = useRef(null);
@@ -20,6 +22,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
 
 
   const [err, setErr] = useState({});
+  const [Loading,setLoading]=useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -30,11 +33,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const onSubmit = async (data) => {
-    console.log("Form submitted with data:", data);
 
-
-  };
 
   const resetForm = () => {
     setEmail("");
@@ -119,6 +118,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
   };
 
   const submit = async (e) => {
+    setLoading(true);
     e.preventDefault();
 
     const newErrors = {
@@ -134,10 +134,12 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
     setErr(newErrors);
 
     if (Object.values(newErrors).some((err) => err)) {
+      setLoading(false);
       return; // Stop submit
     }
 
     if (!email.trim() || !pw.trim()) {
+      setLoading(false);
       // setErr("Please fill in all required fields.");
       return;
     }
@@ -156,6 +158,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
         if (response.status === 201) {
           setIsSignUp(false);
           resetForm();
+          alert("Registration successful! Please log in.");
         }
       }
       else {
@@ -164,21 +167,36 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
           email: email.trim(),
           password: pw
         });
+        console.log("User logged in successfully:", response);
         if (response.status === 200) {
           setIsLoggedIn(true);
+          //have to set the user context here
           onClose();
           navigate('/customer-master');
+
+
         }
       }
     } catch (err) {
       console.error("Error during form submission:", err);
       setErr(err.response?.data?.errors[0] || "An error occurred. Please try again.");
+    }finally {
+      setLoading(false) 
     };
   };
 
   if (!open) return null;
 
+  if (Loading) {
+    return ( 
+    <>
+    <LoadingSkeleton />
+    </>
+    );
+  };
+
   return (
+    
     <div
       className="fixed min-h-screen inset-0 z-50 grid place-items-center"
       aria-modal="true"
@@ -342,6 +360,10 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
                 {showConfirmPw ? "HIDE" : "SHOW"}
               </button>
             </div>
+          )}
+
+          {err && typeof err === "string" && (
+            <p className="text-sm text-red-600">{err}</p>
           )}
 
           {!isSignUp && (
