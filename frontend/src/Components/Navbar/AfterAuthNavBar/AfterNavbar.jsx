@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Bell, CheckCheck, X } from "lucide-react";
 import { notificationData } from "../../../utils/constants";
 
-const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfileDropdownOpen, setIsProfileDropdownOpen }) => {
+const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, setIsProfileDropdownOpen }) => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState(notificationData || []);
   const buttonRef = useRef(null);

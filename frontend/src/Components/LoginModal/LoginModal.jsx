@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../utils/service/userService";
 import { googleLogin, loginUser } from "../../utils/service/authService";
-import LoadingSkeleton from "../../utils/LoadingSkeleton";
+import LoadingPage from "../AfterAuthComponent/ReminderHistoryPage/LoadingPage";
+import { useUser } from "../../contexts/UserContext";
 
-export default function LoginModal({ open, onClose, setIsLoggedIn }) {
+export default function LoginModal({ open, onClose}) {
   const dialogRef = useRef(null);
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPw, setShowPw] = useState(false);
@@ -23,6 +24,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
 
   const [err, setErr] = useState({});
   const [Loading,setLoading]=useState(false);
+  const {setUser,setIsUserLoggedOut}=useUser();
 
   useEffect(() => {
     if (!open) return;
@@ -140,7 +142,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
 
     if (!email.trim() || !pw.trim()) {
       setLoading(false);
-      // setErr("Please fill in all required fields.");
+      setErr("Please fill in all required fields.");
       return;
     }
 
@@ -169,10 +171,12 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
         });
         console.log("User logged in successfully:", response);
         if (response.status === 200) {
-          setIsLoggedIn(true);
-          //have to set the user context here
+          setUser(response.data.user);
+          setIsUserLoggedOut(false);
+          localStorage.setItem('isUserLoggedIn', 'true');
+          resetForm();
           onClose();
-          navigate('/customer-master');
+          navigate('/nodue/customer-master');
 
 
         }
@@ -190,13 +194,22 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
     try{
       setLoading(true);
      const response= await googleLogin();
-     console.log("Google login response:",response);
+      console.log("Google login response:", response);
+      if(response.status===200){
+        setUser(response.data.user);
+        setIsUserLoggedOut(false);
+        localStorage.setItem('isUserLoggedIn', 'true');
+        resetForm();
+        onClose();
+        navigate('/customer-master');
+      }
     }catch(err){
       console.error("Error during Google login:", err);
       setErr("Google login failed. Please try again.");
     }finally{
       setLoading(false);
     }
+    
   };
 
   if (!open) return null;
@@ -204,7 +217,7 @@ export default function LoginModal({ open, onClose, setIsLoggedIn }) {
   if (Loading) {
     return ( 
     <>
-    <LoadingSkeleton />
+    <LoadingPage/>
     </>
     );
   };

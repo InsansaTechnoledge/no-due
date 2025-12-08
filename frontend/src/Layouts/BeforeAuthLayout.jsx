@@ -1,18 +1,31 @@
-// BeforeAuthLayout.jsx
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar/Navbar";
 import Footer from "../Components/Footer/Footer";
+import { useUser } from "../contexts/UserContext";
+import { use, useEffect } from "react";
 
-// useOutletContext to pass props to child ( eg. const '(isLoggedIn , setIsLoggedIn)' = useOutletContext(); )
-
-export default function BeforeAuthLayout({setIsLoggedIn , isLoggedIn}) {
+export default function BeforeAuthLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const {user}=useUser();
+
+  useEffect(() => {
+    if(user){
+      navigate('/nodue/customer-master');
+    }
+  }, [user,location.pathname]);
 
   return (
     <div className={`min-h-screen flex flex-col ${location.pathname === '/' && 'backgroundone'}`}>   
-      <Navbar setIsLoggedIn={setIsLoggedIn}/>
-      <main className="flex-1 min-h-screen">                  
-        <Outlet context={{ isLoggedIn, setIsLoggedIn }}/>  
+      <Navbar/>
+      <main className="flex-1 min-h-screen"> 
+
+        {!user ?
+
+          <Outlet />
+          :
+          null 
+         }
       </main>
       <Footer />                                  
     </div>

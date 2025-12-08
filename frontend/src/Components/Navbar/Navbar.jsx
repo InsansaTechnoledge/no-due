@@ -13,7 +13,7 @@ const links = [
 
 const NAV_HEIGHT_PX = 64; // your sticky header height (h-16 => 64px)
 
-const Navbar = ({setIsLoggedIn}) => {
+const Navbar = () => {
   const [open, setOpen] = useState(false);
 
   const [openLogin , setOpenLogin] = useState(false);
@@ -88,7 +88,6 @@ const Navbar = ({setIsLoggedIn}) => {
               <LoginModal
                 open={openLogin}
                 onClose={() => setOpenLogin(false)}
-                setIsLoggedIn={setIsLoggedIn}
                />
           </div>
 
@@ -141,7 +140,6 @@ const Navbar = ({setIsLoggedIn}) => {
                 <LoginModal
                   open={openLogin}
                   onClose={() => setOpenLogin(false)}
-                  setIsLoggedIn={setIsLoggedIn}
                 />
               {/* </a> */}
             </div>
