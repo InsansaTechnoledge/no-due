@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate} from "react-router-dom";
 import { registerUser } from "../../utils/service/userService";
+import logger from "../../utils/logger.js"
+import GoogleLoginBtn from "../auth/GoogleLoginBtn.jsx"
 
 export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
   const dialogRef = useRef(null);
@@ -17,7 +19,9 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
   const [pw, setPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [err, setErr] = useState("");
- 
+
+
+
 
   useEffect(() => {
     if (!open) return;
@@ -119,7 +123,7 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
       >
         {/* Logo Area */}
         <div className="mb-6 text-center">
-          <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full">
+          <div className={`mx-auto flex   h-32 w-32 items-center justify-center rounded-full ${isSignUp?'hidden':''}  `}>
             <img src="/src/assets/logo.png" alt="" />
           </div>
           <h2 className="text-2xl font-normal text-gray-800">
@@ -232,6 +236,8 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
             </div>
           )}
 
+          
+
           {!isSignUp && (
             <div className="text-right">
               <a href="#" className="text-sm font-medium text-teal-600 hover:underline">
@@ -239,6 +245,18 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
               </a>
             </div>
           )}
+
+
+
+          <div className="relative w-full my-6">
+          <div className="border-t border-gray-300 w-full"></div>
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-sm text-gray-500">
+            OR
+          </span>
+        </div>
+
+        <GoogleLoginBtn/>
+
 
           {err && (
             <div className="rounded bg-red-50 px-3 py-2">
@@ -262,6 +280,10 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
               {isSignUp ? "Sign up" : "Next"}
             </button>
           </div>
+
+
+          
+         
         </div>
 
         <button
@@ -271,7 +293,9 @@ export default function AuthModal({ open, onClose, onSubmit , setIsLoggedIn }) {
         >
           ✕
         </button>
+
       </div>
+    
     </div>
   );
 }
@@ -281,14 +305,14 @@ function Demo() {
   const [open, setOpen] = useState(true);
   
   const handleSubmit = async(data) => {
-    console.log('Form submitted:', data);
+    logger.log('Form submitted:', data);
 
     if(data.type=="signup"){
-      console.log("signup is begin called");
+      logger.log("signup is begin called");
       // const response = register(data);
-      console.log(response);
+      logger.log(response);
     }else{
-      console.log("sign in");
+      logger.log("sign in");
       //login
     }
 

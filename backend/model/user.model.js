@@ -1,7 +1,7 @@
-import { Schema, mongoose } from 'mongoose';
+import { Schema, mongoose, Types } from 'mongoose';
 import validator from 'validator';
 import { connection } from '../database/databaseConfig.js';
-import bcrypt from "bcrypt";
+import bcrypt from 'bcryptjs';
 
 const addressSchema = new Schema({
     street: {
@@ -33,13 +33,37 @@ const addressSchema = new Schema({
     { _id: false });
 
 const userSchema = new Schema({
-    name: {
+    businessName: {
         type: String,
         required: true,
         minlength: [3, "Name must be at least 3 characters long"],
         maxlength: [70, "Name can be at most 70 characters long"],
         trim: true,
     },
+      fname: {
+    type: String,
+    trim: true,
+    required: [true, 'First name is required'],
+    minLength: [2, 'enter a valid first name'],
+    validate: {
+      validator: function (v) {
+        return /^[a-zA-Z]+$/.test(v);
+      },
+      message: 'First name should contain only alphabets',
+    }
+  },
+  lname: {
+    type: String,
+    trim: true,
+    required: [true, 'Last name is required'],
+    minLength: [2, 'enter a valid last name'],
+    validate: {
+      validator: function (v) {
+        return /^[a-zA-Z]+$/.test(v);
+      },
+      message: 'Last name should contain only alphabets',
+    }
+  },
     email: {
         type: String,
         required: [true, "Email is required"],
@@ -73,7 +97,11 @@ const userSchema = new Schema({
                 'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.',
         },
     },
-    phone: {
+    googleId: {
+        type: String,
+        unique: false,//as local users will have the same id field
+    },
+    phoneNumber: {
         type: String,
         trim: true,
         validate: {
@@ -124,20 +152,23 @@ const userSchema = new Schema({
         maxlength: [50, "Language can be at most 50 characters long"],
     },
     subscriptionPlan: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Types.ObjectId,
         ref: 'SubscriptionPlan',
     },
 }, { timestamps: true });
 
-userSchema.pre('save', function (next) {
-    if (!this.isModified('password')) return next();
-    try {
-        const salt = bcrypt.genSaltSync(10);
-        this.password = bcrypt.hashSync(this.password, salt);
-        return next();
-    } catch (err) {
-        return err;
-    }
+userSchema.pre('save', async function (next) {
+   try {
+    if (!this.isModified('password')) return ;
+    const salt =  bcrypt.genSaltSync(10);
+    this.password =  bcrypt.hashSync(this.password, salt);
+    
+    return;
+   } catch (error) {
+    
+    console.log(error);
+    
+   }
 
 });
 
