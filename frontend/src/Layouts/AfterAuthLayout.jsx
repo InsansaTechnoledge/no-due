@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import SideBar from "../Components/Navbar/AfterAuthNavBar/SideBar";
 import AfterNavbar from "../Components/Navbar/AfterAuthNavBar/AfterNavbar";
+//
 
 const AfterAuthLayout = () => {
   const location = useLocation();
