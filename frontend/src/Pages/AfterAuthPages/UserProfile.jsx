@@ -23,6 +23,7 @@ import { toast } from "react-toastify";
 //   plan: { name: "Growth", price: 999, renewsOn: "2025-11-01" },
 // };
 
+//have to confirm the update profile api and the passwordupdation flow
 const MOCK_INVOICES = [
   { id: "INV-1008", date: "2025-10-01", amount: 499, status: "Paid" },
   { id: "INV-1007", date: "2025-09-01", amount: 499, status: "Paid" },
