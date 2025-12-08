@@ -13,7 +13,6 @@ const CustomerMobileCard = () => {
       const fetchCustomers = async () => {
         try {
           const data = await getCustomers({page, limit});
-          console.log(customers);
           setCustomers(data.customers);
         } catch (error) {
           console.log(error);

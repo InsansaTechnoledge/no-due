@@ -51,8 +51,6 @@ passport.use(new GoogleStrategy({
                 return done(null, user);
             }
 
-            console.log('Creating new user from Google profile',profile);
-
             user = await User.create({
                 googleId: profile.id,
                 businessName: profile.displayName,

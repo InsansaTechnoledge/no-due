@@ -18,7 +18,6 @@ export const createCustomer = async (req, res) => {
         CustomerOfComapny: userId
       }));
 
-      console.log("Formatted Data:", formattedData);
 
       const inserted = await Customer.insertMany(formattedData ); // if any error it roll back, use boolean if required
 

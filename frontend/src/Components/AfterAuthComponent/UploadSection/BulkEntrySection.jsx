@@ -56,7 +56,6 @@ const csvFileToJson = (file) => {
   reader.onload = function (event) {
     const csvText = event.target.result;
     const json = csvTextToJson(csvText);
-    console.log("Converted JSON:", json);
     setPreviewData(json);
   };
 
@@ -64,7 +63,7 @@ const csvFileToJson = (file) => {
 };
 
   const handleSubmitEntry = async()=>{
-    // console.log("after preview sumit is clicked");
+
     try {
       const response = await createCustomers(previewData); 
       if(response.success){

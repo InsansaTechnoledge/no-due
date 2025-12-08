@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { Bell, CheckCheck, X } from "lucide-react";
 import { notificationData } from "../../../utils/constants";
 import { useUser } from "../../../contexts/UserContext";
+import LogoutModal from "../../auth/LogoutModal";
 
 const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, setIsProfileDropdownOpen }) => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState(notificationData || []);
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const unreadCount = useMemo(
     () => items.filter((n) => !n.read).length,
@@ -43,7 +45,14 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
 
 
   return ( 
+    <>
+       {
+        showLogoutModal &&
+        <LogoutModal setShowLogoutModal={setShowLogoutModal} />
+      }
+
     <nav className="hidden md:block sticky top-0 z-40 w-full backdrop-blur supports-[backdrop-filter]:bg-white/70 bg-white/90 border-b border-gray-200">
+   
       <div className="mx-auto md:max-w-7xl  px-10 md:px-12 lg:px-10 py-4 flex items-center justify-between">
         {/* Welcome */}
         <h1 className="text-[17px] sm:text-lg font-semibold tracking-tight text-gray-800">
@@ -196,7 +205,6 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
 
               <Link
                 to="/nodue/user-profile"
-                // onClick={()=>closeProfileDropdown()}
                 className="flex items-center px-4 py-2 font-medium text-sm text-gray-700 
               hover:bg-gray-100 transition-colors"
               >
@@ -209,7 +217,8 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
 
               <button
                 onClick={()=>{
-                  console.log("Logging out");
+                  setShowLogoutModal(true);
+                  closeProfileDropdown();
                 }}
                 className="flex hover:cursor-pointer items-center w-full font-medium px-4 py-2 text-sm text-gray-700 
                       hover:bg-gray-100 transition-colors"
@@ -229,6 +238,7 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
       </div>
     
     </nav>
+    </>
   );
 };
 

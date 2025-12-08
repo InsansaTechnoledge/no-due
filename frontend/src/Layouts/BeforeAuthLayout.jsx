@@ -13,14 +13,14 @@ export default function BeforeAuthLayout() {
     if(user){
       navigate('/nodue/customer-master');
     }
-  }, [user,location.pathname]);
+  }, [user,location.pathname,navigate]);
 
   return (
     <div className={`min-h-screen flex flex-col ${location.pathname === '/' && 'backgroundone'}`}>   
       <Navbar/>
       <main className="flex-1 min-h-screen"> 
 
-        {!user ?
+        {(!user || location.pathname === "google-success")?
 
           <Outlet />
           :

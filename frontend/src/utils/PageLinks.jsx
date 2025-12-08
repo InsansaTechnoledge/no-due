@@ -21,6 +21,7 @@ import { checkAuth } from "./service/authService";
 import LoadingPage from "../Components/AfterAuthComponent/ReminderHistoryPage/LoadingPage";
 import Hero from "../Pages/Hero";
 import AuthSuccess from "../Components/auth/AuthSuccess";
+import AuthRoute from "../Layouts/AuthRoutes";
 
 
 const PageLinks = () => {
@@ -32,6 +33,7 @@ const PageLinks = () => {
   async function fetchUser() {
     try{
       const response = await checkAuth();
+      console.log("Auth Check Response:", response);
       if(response.status === 200){
         setUser(response.data.user);
       }
@@ -75,7 +77,11 @@ const PageLinks = () => {
       {/* AUTH AREA */}
       <Route
         path="/nodue"
-        element={<AfterAuthLayout />}
+        element={
+          <AuthRoute>
+        <AfterAuthLayout />
+        </AuthRoute>
+      }
       >
         {/* If user hits /nodue, land on first active page */}
         <Route index element={<Navigate to="customer-master" replace />} />

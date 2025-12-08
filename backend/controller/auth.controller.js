@@ -7,8 +7,6 @@ export const googleLogin = passport.authenticate('google',{
     session: true,
 });
 
-console.log(process.env.backend_URL);
-
 export const googleLoginCallback = passport.authenticate('google', {
   successRedirect: `${process.env.CLIENT_BASE_URL}/google-success`,
   failureRedirect: `${process.env.CLIENT_BASE_URL}`,
@@ -16,16 +14,19 @@ export const googleLoginCallback = passport.authenticate('google', {
 });
 
 export const getGoogleProfile = (req, res) => {
-      console.log('Google profile callback hit',req.user);
   if (!req.user) return new APIError(401, ['unauthorized']).send(res);
     return new APIResponse(200, { user: req.user }, 'Google profile fetched successfully').send(res);
 };
 
 export const checkAuth = async (req,res) => {
+    if(req.user)
     return new APIResponse(200,{user: req.user},'session found').send(res);
+    return new APIError(401,['No active session found','Unauthorized']).send(res);
 };
 
 export const logout = (req,res) => {    
+    console.log('Logging out user:', req.user ? req.user.id : 'No user in request');
+    console.log('Session ID before logout:', req.session);
     req.logout((err) => {
         if(err){
             return new APIError(500,['Logout failed']).send(res);
@@ -34,9 +35,10 @@ export const logout = (req,res) => {
             if(err){
                 return new APIError(500,['Session destruction failed']).send(res);
             };
-            req.clearCookie('connect.sid');
+             res.clearCookie('connect.sid');
             return new APIResponse(200,{},'Logout successful').send(res);
         });
+       
     });
 };
 

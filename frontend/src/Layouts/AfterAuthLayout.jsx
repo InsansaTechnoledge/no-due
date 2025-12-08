@@ -11,7 +11,6 @@ const AfterAuthLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
 
-
   useEffect(() => {
     const page = location.pathname.split("/")[2];
     setActivePage(page);

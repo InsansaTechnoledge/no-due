@@ -1,35 +1,52 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { getGoogleProfile } from '../../utils/service/authService';
 import { useUser } from '../../contexts/UserContext';
+import LoadingPage from '../AfterAuthComponent/ReminderHistoryPage/LoadingPage';
 
 export default function AuthSuccess() {
 
 
     const navigate = useNavigate();
     const {user,setUser,setIsUserLoggedOut}=useUser();
+    const [loading,setLoading] = useState(true);
 
 
    useEffect(() => {
     async function fetchProfile() {
       try {
         const data = await getGoogleProfile();
-        console.log("Google Profile Data:", data);
       localStorage.setItem('isUserLoggedIn', 'true');
         setIsUserLoggedOut(false);
         setUser(data.user);
+
+        if(data.user.isProfileCompleted===false){
+
+          navigate("/nodue/user-profile");
+          return;
+        }
 
         navigate("/nodue");
       } catch (error) {
         console.error("Error fetching Google profile:", error);
         navigate("/");
+      }finally{
+        setLoading(false);
       }
     }
 
     fetchProfile();
   }, [navigate]);
 
+  if(loading)
+  {
+    return(
+      <>
+      <LoadingPage />
+      </>
+    )
+  }
 
 
   return (

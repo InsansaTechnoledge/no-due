@@ -156,7 +156,6 @@ export default function LoginModal({ open, onClose }) {
           lname: lastName.trim(),
           password: pw
         });
-        console.log("User registered successfully:", response);
         if (response.status === 201) {
           setIsSignUp(false);
           resetForm();
@@ -169,13 +168,16 @@ export default function LoginModal({ open, onClose }) {
           email: email.trim(),
           password: pw
         });
-        console.log("User logged in successfully:", response);
         if (response.status === 200) {
           setUser(response.data.user);
           setIsUserLoggedOut(false);
           localStorage.setItem('isUserLoggedIn', 'true');
           resetForm();
           onClose();
+
+          if(user.isProfileCompleted===false)
+            navigate('/nodue/user-profile');
+          else
           navigate('/nodue/customer-master');
 
 
@@ -190,17 +192,14 @@ export default function LoginModal({ open, onClose }) {
   };
 
   const googleLoginButton = () => {
-    console.log("Google login clicked");
     try {
       setLoading(true);
        googleLogin();
     } catch (err) {
       console.error("Error during Google login:", err);
       setErr("Google login failed. Please try again.");
-    } finally {
-      setLoading(false);
+         setLoading(false);
     }
-
   };
 
   if (!open) return null;

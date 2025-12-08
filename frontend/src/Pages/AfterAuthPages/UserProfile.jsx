@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { User, Mail, Phone, Building2, MapPin, Globe, Shield, Lock, Eye, EyeOff, Camera, Trash2, Save, Bell, Crown, CreditCard, QrCode, LogOut, CheckCircle2, Download } from "lucide-react";
+import { useUser } from "../../contexts/UserContext";
+import { toast } from "react-toastify";
 
 //
 
@@ -28,7 +30,12 @@ const MOCK_INVOICES = [
 
 export default function UserProfile() {
   // const [user, setUser] = useState(null); // Fetch from API
-  const {user} = useAuth();
+  const {user} = useUser();
+  console.log(user);
+  if(user.isProfileCompleted===false){
+    toast.info("Please complete your profile to continue.");
+  }
+
   const [form, setForm] = useState(user);
 
   useEffect(()=>{
@@ -42,7 +49,7 @@ export default function UserProfile() {
   },[user])
 
 
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(user?.profileImageUrl);
   const [showPw, setShowPw] = useState(false);
   const [twoFA, setTwoFA] = useState(false);
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
@@ -70,10 +77,6 @@ export default function UserProfile() {
     alert("Password changed (mock)");
     setPwd({ current: "", next: "", confirm: "" });
   };
-
-  // useEffect(()=>{
-  //   console.log(form);
-  // },[])
  
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,9 +122,9 @@ export default function UserProfile() {
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatar}/>
               </div>
               <div className="flex-1 pt-4">
-                <h2 className="text-2xl font-semibold text-gray-100">{form?.name || "—"}</h2>
+                <h2 className="text-2xl font-semibold text-gray-700">{form?.businessName || "—"}</h2>
                 <p className="text-gray-600">{form?.email}</p>
-                <p className="text-sm text-gray-500">{form?.phone}</p>
+                <p className="text-sm text-gray-500">{form?.phoneNumber}</p>
               </div>
               <div className="pt-4">
                 <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg px-4 py-3">
@@ -146,7 +149,7 @@ export default function UserProfile() {
                 <Field 
                   label="Full Name" 
                   icon={<User className='w-4 h-4'/>} 
-                  value={form?.name} 
+                  value={form?.fname? form?.fname +' ' +form?.lname : ""} 
                   onChange={(v)=>onChange('name', v)} 
                   placeholder="Enter your full name"
                 />
