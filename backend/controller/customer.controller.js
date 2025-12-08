@@ -5,7 +5,6 @@ import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils.js";
 export const createCustomer = async (req, res) => {
   try {
     const customerData = req.body;
-    const userId = "6931a1b5ea27b875a683e9cd";
 
     if (!customerData) {
       return new APIResponse(400, null, "Data is required").send(res);
@@ -15,7 +14,7 @@ export const createCustomer = async (req, res) => {
 
       const formattedData = customerData.map(c => ({
         ...c,
-        CustomerOfComapny: userId
+        CustomerOfComapny: req.user._id
       }));
 
 
@@ -28,7 +27,7 @@ export const createCustomer = async (req, res) => {
       ).send(res);
     }
 
-    customerData.CustomerOfComapny = userId;
+    customerData.CustomerOfComapny =  req.user._id;
 
     const newCustomer = new Customer(customerData);
     await newCustomer.save();
