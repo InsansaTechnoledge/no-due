@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Bell, CheckCheck, X } from "lucide-react";
 import { notificationData } from "../../../utils/constants";
 import { useAuth } from "../../../context/AuthContext";
@@ -41,6 +41,12 @@ const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfil
 
   // const user = {name:"Tanmay Singh", email:"tanmay@singh.com"}
   const {user, logout} = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async()=>{
+    await logout();
+    navigate("/login");    
+  }
 
 
 
@@ -210,7 +216,7 @@ const AfterNavbar = ({ setIsLoggedIn, profileRef, closeProfileDropdown, isProfil
               </Link>
 
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="flex hover:cursor-pointer items-center w-full font-medium px-4 py-2 text-sm text-gray-700 
                       hover:bg-gray-100 transition-colors"
               >

@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     const logout = async () => {
-        await api.post("/api/v1/auth/logout", {}, { withCredentials: true });
+        await api.get("/api/v1/auth/logout", {}, { withCredentials: true });
         setUser(null);
     };
 
