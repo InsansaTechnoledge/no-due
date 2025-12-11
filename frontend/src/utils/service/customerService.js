@@ -44,3 +44,9 @@ export const getCustomerTransactions = async (customerId) => {
     const response = await api.get(`/v1/customers/${customerId}/transactions`);
     return response.data ?? [];
 };
+
+export const updatecustomer = async(id, updatedData)=>{
+    console.log(id, updatedData);
+    const response = await api.put(`/v1/customers/${id}`, updatedData);
+    return response.data;
+}
