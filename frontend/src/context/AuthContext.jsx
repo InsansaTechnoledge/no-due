@@ -12,6 +12,14 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isUserLoggedOut,setIsUserLoggedOut] = useState(true);
 
+    useEffect(() => {
+        if(user){
+            setIsUserLoggedOut(false);
+        }else{
+            setIsUserLoggedOut(true);
+        }
+    }, [user]);
+
 
 
 
@@ -40,38 +48,10 @@ export const AuthProvider = ({ children }) => {
             setLoading(false); // have to check this from my side
 
         }
-
-        // if(user){
-        //     setIsUserLoggedOut(false);
-        // }
         fetchUser();
     }, []);
 
-// 
-    const login = async (credentials) => {
-        const response = await api.post("/v1/auth/login", credentials);
-        await fetchUser(); // refresh user after login
-        return response;
-    };
-
-    const register = async (data)=>{
-        console.log("register is calling from context");
-        
-        const response = await api.post("/v1/auth/register", data);
-
-        console.log(response);
-
-        return response;
-
-    }
-
-    const logout = async () => {
-        await api.get("/v1/auth/logout", {}, { withCredentials: true });
-        setUser(null);
-    };
-
-
-    const value = { user, register, login, logout, loading, setUser, isUserLoggedOut, setIsUserLoggedOut };
+    const value = { user, loading, setUser, isUserLoggedOut, setIsUserLoggedOut };
 
     return (
         <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -5,7 +5,6 @@ import { useAuth } from '../../context/AuthContext';
 
 const LogoutModal = ({ setShowLogoutModal }) => {
   const { setUser, setIsUserLoggedOut } = useAuth();
-  const navigate = useNavigate();
   const handleLogout = async () => {
 
     const response = await logoutUser();
@@ -13,8 +12,7 @@ const LogoutModal = ({ setShowLogoutModal }) => {
       setIsUserLoggedOut(true);
       setUser(null);
       setShowLogoutModal(false);
-      localStorage.removeItem('hasLoggedIn');
-      localStorage.setItem("isUserLoggedIn",false);
+      localStorage.removeItem("isUserLoggedIn");
 
     }
   }

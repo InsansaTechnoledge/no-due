@@ -3,26 +3,7 @@ import { User, Mail, Phone, Building2, MapPin, Globe, Shield, Lock, Eye, EyeOff,
 // import { getUserProfile } from "../../utils/service/userService";
 import { useLayoutEffect } from "react";
 import {useAuth} from "../../context/AuthContext.jsx";
-
-//
-
-
-// const MOCK_USER = {
-//   name: "Tanmay Shah",
-//   email: "tanmay@example.com",
-//   phone: "+91 99999 99999",
-//   company: "Insansa Techknowledge Pvt Ltd",
-//   gst: "27ABCDE1234F1Z5",
-//   website: "https://insansa.com",
-//   country: "India",
-//   state: "Rajasthan",
-//   city: "Udaipur",
-//   pincode: "313001",
-//   address: "24, Lakeview Park",
-//   locale: "en-IN",
-//   timezone: "Asia/Kolkata",
-//   plan: { name: "Growth", price: 999, renewsOn: "2025-11-01" },
-// };
+import { toast } from "react-toastify";
 
 const MOCK_INVOICES = [
   { id: "INV-1008", date: "2025-10-01", amount: 499, status: "Paid" },
@@ -30,37 +11,47 @@ const MOCK_INVOICES = [
 ];
 
 export default function UserProfile() {
-  // const [user, setUser] = useState(null); // Fetch from API
+
   const {user} = useAuth();
-  const [form, setForm] = useState(user);
+  const [form, setForm] = useState({});
 
-// useEffect(() => {
+  useEffect(() => {
+  if (!user) return;
 
-  // const fetchUser = async () => {
-  //   console.log("calling fetch user")
-  //   // Mock fetch delay
-  //  const response = await getUserProfile();
-  //   // console.log(  "User Profile Data:", response);
-  //   setUser(response?.user);
+  setForm({
+    ...user,
+    fullName: user?.name 
+      ? user.name 
+      : user?.fname && user?.lname 
+        ? `${user.fname} ${user.lname}` 
+        : "",
+    plan: { name: "Growth", price: 999, renewsOn: "2025-11-01" }
+  });
+}, [user]);
 
-  // };
 
-    
-  // fetchUser(); // it is required if sessin is still in the brwser and it is not expired then it is not saved in context then it should fetch the logged in user data and it will render here.
+   useEffect(() => {
+    if (!user) return;
 
-  // }, []);
+    const isIncomplete =
+      !user.fname ||
+      !user.lname ||
+      !user.phoneNumber ||
+      !user.companyName ||
+      !user.address?.street ||
+      !user.address?.city ||
+      !user.address?.state ||
+      !user.address?.country ||
+      !user.address?.pincode;
 
-  useEffect(()=>{
-    if(user) {
-      setForm((prev)=>({
-        ...prev,
-        ...user,
-        fullName:user?.name?user.name:user?.fname?`${user.fname} ${user.lname}`:'',
-        plan :{ name: "Growth", price: 999, renewsOn: "2025-11-01" }, //taking dummy data  
-      }));
-      console.log("form is there",form);
+
+    if (isIncomplete) {
+      toast.warning("Please complete your profile to continue!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
-  },[user]);
+  }, [user]);
 
   
 

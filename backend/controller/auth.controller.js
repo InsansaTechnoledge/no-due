@@ -88,10 +88,8 @@ export const localLogin = (req,res) => {
                         //to update the last login time, and destroy the other sessions
                         //call this 
 
-                        // const id = String(user._id || user.id);
-                        const userResponse = user.toObject ? user.toObject() : user;
-                        delete userResponse.password;
-                        return new APIResponse(200,  { user:userResponse },'Login successful').send(res);
+                        const id = String(user._id || user.id);
+                        return new APIResponse(200,  { user : {id}},'Login successful').send(res);
                     });
 
                 }catch(err){

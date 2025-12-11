@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../utils/service/userService";
-import { googleLogin, loginUser } from "../../utils/service/authService";
+import { checkAuth, googleLogin, loginUser } from "../../utils/service/authService";
 import LoadingPage from "../AfterAuthComponent/ReminderHistoryPage/LoadingPage";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
@@ -25,7 +25,7 @@ export default function LoginModal({ open, onClose }) {
 
   const [err, setErr] = useState({});
   const [Loading, setLoading] = useState(true);
-  const {setUser, setIsUserLoggedOut} = useAuth();
+  const { setUser, setIsUserLoggedOut } = useAuth();
 
   useEffect(() => {
     if (!open) return;
@@ -173,13 +173,15 @@ export default function LoginModal({ open, onClose }) {
           setUser(response.data.user);
           setIsUserLoggedOut(false);
           localStorage.setItem('isUserLoggedIn', 'true');
+          const userdata = await checkAuth();
+          setUser(userdata.data.user);
           resetForm();
           onClose();
 
-          if(user.isProfileCompleted===false)
+          if (user.isProfileCompleted === false)
             navigate('/nodue/user-profile');
           else
-          navigate('/nodue/customer-master');
+            navigate('/nodue/customer-master');
 
 
         }
@@ -195,7 +197,7 @@ export default function LoginModal({ open, onClose }) {
   const googleLoginButton = () => {
     try {
       setLoading(true);
-       googleLogin();
+      googleLogin();
     } catch (err) {
       console.error("Error during Google login:", err);
       setErr("Google login failed. Please try again.");
@@ -224,7 +226,7 @@ export default function LoginModal({ open, onClose }) {
       >
         {/* Logo Area */}
         <div className="mb-6 text-center">
-          <div className={`mx-auto ${isSignUp?'hidden':'flex'} h-32 w-32 items-center justify-center rounded-full `}>
+          <div className={`mx-auto ${isSignUp ? 'hidden' : 'flex'} h-32 w-32 items-center justify-center rounded-full `}>
             <img src="/src/assets/logo.png" alt="" />
           </div>
           <h2 className="text-2xl font-normal text-gray-800">
@@ -248,12 +250,12 @@ export default function LoginModal({ open, onClose }) {
             Continue with Google
           </button>
 
-        <div className="relative w-full my-6">
-          <div className="border-t border-gray-300 w-full"></div>
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-sm text-gray-500">
-            OR
-          </span>
-        </div>
+          <div className="relative w-full my-6">
+            <div className="border-t border-gray-300 w-full"></div>
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-sm text-gray-500">
+              OR
+            </span>
+          </div>
 
 
           {isSignUp && (

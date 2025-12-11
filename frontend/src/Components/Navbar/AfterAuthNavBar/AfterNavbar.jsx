@@ -16,7 +16,7 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
     () => items.filter((n) => !n.read).length,
     [items]
   );
-  const {user, logout} = useAuth();
+  const {user} = useAuth();
   console.log(user);
   const fullName =  user?.name || user?.businessName ||  (user?.fname && user?.lname ? `${user.fname} ${user.lname}` : "") || "";
 
@@ -46,11 +46,6 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
 
   // const user = {name:"Tanmay Singh", email:"tanmay@singh.com"}
   // const navigate = useNavigate();
-
-  const handleLogout = async()=>{
-    await logout();
-    localStorage.setItem("isUserLoggedIn",false);
-  }
 
 
 
@@ -226,7 +221,7 @@ const AfterNavbar = ({ profileRef, closeProfileDropdown, isProfileDropdownOpen, 
               </Link>
 
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="flex hover:cursor-pointer items-center w-full font-medium px-4 py-2 text-sm text-gray-700 
                       hover:bg-gray-100 transition-colors"
               >
