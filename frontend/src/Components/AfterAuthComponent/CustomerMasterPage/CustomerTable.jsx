@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { currency, formatDate, StatusBadge, ActionBadge } from '../../../utils/AfterAuthUtils/Helpers'
 import { Download, FileText, Pencil, Trash2 } from 'lucide-react'
 
-import {deleteCustomerById, getAllcustomers, getCustomers} from "../../../utils/service/customerService";
+import {deleteCustomerById, getAllcustomers, getCustomers, updatecustomer} from "../../../utils/service/customerService";
 import { toast } from 'react-toastify';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import EditCustomerModal from "./EditCustomerModal.jsx"
 
 
 const CustomerTable = ({TableHeaders }) => {
@@ -16,6 +17,25 @@ const CustomerTable = ({TableHeaders }) => {
   const [totalPages, setTotalPages] = useState();
   const [totalCustomers, setTotalCustomers] = useState();
   const [deletingId, setDeletingId] = useState(null);
+  const [editcustomer, setEditCustomer] = useState([]);
+  const [showEditMOdal, setShowEditModal] = useState(false);
+  const editRef = useRef();
+
+    useEffect(()=>{
+      const handleMouseClick = (e)=>{
+        if(!showEditMOdal) return;
+  
+        if(editRef!==undefined && editRef.current.contains(e.target)){
+          return;
+        }
+  
+        setShowEditModal(false);
+      
+      }
+      document.addEventListener("mousedown", handleMouseClick);
+  
+      return ()=> document.removeEventListener("mousedown", handleMouseClick);
+    });
 
 
   useEffect(()=>{
@@ -36,9 +56,28 @@ const CustomerTable = ({TableHeaders }) => {
 
 
   const handleEditCustomer = (customer)=>{
-    console.log("edit called",customer);
+    setEditCustomer(customer);
+    setEditCustomer(Object.fromEntries(Object.entries(customer).filter(([key])=>!['__v','createdAt','updatedAt'].includes(key)))); // removing unwanted keys for update
+    setShowEditModal(true);
 
   }
+
+  const handleEditSubmit = async()=>{
+    const response = await updatecustomer(editcustomer._id, editcustomer);
+    console.log(response);
+    //else{call update api with data and id
+    if(response.status===200){
+      toast.success("Customer updated");
+      //update the existing array obj
+      setCustomers(prev=>prev.map(c=>c._id===editcustomer._id?response.data:c)); //updated the customer no extra call
+      setShowEditModal(false);
+
+
+    }else{
+      console.log(response)
+      toast.error("error while updating")
+    }
+}
 
   const handleDeleteCustomer = async(id)=>{
     // console.log("delete called",id);
@@ -276,6 +315,10 @@ const CustomerTable = ({TableHeaders }) => {
                 </button>
               </div>
             </div>
+
+            { showEditMOdal &&  <div ref={editRef}> 
+              <EditCustomerModal customer={editcustomer} setEditCustomer={setEditCustomer} handleClose={()=>setShowEditModal(false)} handleEditSubmit={handleEditSubmit} /> 
+               </div>}
           </div>
   )
 }
