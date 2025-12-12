@@ -22,7 +22,6 @@ import Hero from "../Pages/Hero";
 import AuthSuccess from "../Components/auth/AuthSuccess";
 import AuthRoute from "../Layouts/AuthRoutes";
 import { useAuth } from "../context/AuthContext";
-import CustomerDetail from "../Pages/CustomerDetail";
 
 
 const PageLinks = () => {
@@ -67,7 +66,6 @@ const PageLinks = () => {
 
         <Route path="dashboard" element={<AfterAuthLanding />} />
         <Route path="customer-master" element={<CustomerMaster />} />
-        <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="upload-center" element={<UploadCenter />} />
         <Route path="reminder-management" element={<ReminderManagement />} />
         <Route path="reminder-history" element={<ReminderHistory />} />
