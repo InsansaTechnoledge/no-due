@@ -281,17 +281,17 @@ const CustomerTable = () => {
                 </thead>
     
                 <tbody className="divide-y divide-gray-200">
-                  {customers.map((c) => (
+                  {customers.map((c,index) => (
                     
                     <tr key={c._id} className={`transition-all duration-300 overflow-hidden hover:bg-gray-50 ${deletedCustomerId === c._id ? "opacity-0 h-0" : "opacity-100 h-auto"}`}>
-                      <td className="px-2 py-4 font-medium text-gray-900 align-middle">{c._id}</td>
+                      <td className="px-2 py-4 font-medium text-gray-900 align-middle">{index + 1}</td>
                       <td className="px-2 py-4 text-gray-700 align-middle">{c.name}</td>
-                      <td className="px-2 py-4 text-gray-700 align-middle">{c.company}</td>
-                      {/* <td className="px-6 py-4">
-                        <a href={`mailto:${c.email}`} className="text-blue-600 hover:text-blue-800 hover:underline">
+                      <td className="px-6 py-4">
+                        
+                        {c.email ? (<a href={`mailto:${c.email}`} className="text-blue-600 hover:text-blue-800 hover:underline">
                           {c.email}
-                        </a>
-                      </td> */}
+                        </a>) : "No email added"}
+                      </td>
                       <td className="px-2 py-4 whitespace-nowrap text-gray-700 align-middle">{c.mobile}</td>
                       <td className="px-2 py-4 font-medium text-gray-900">{currency(c.currentDue)}</td>
                       {/* <td className="px-2 py-4 font-medium text-red-600">{currency(c.lastTransaction)}</td> */}

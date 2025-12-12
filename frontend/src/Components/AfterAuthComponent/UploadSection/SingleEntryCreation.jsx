@@ -5,6 +5,7 @@ import PageHeaders from '../../../utils/AfterAuthUtils/PageHeaders';
 import { useNavigate } from 'react-router-dom';
 import { createCustomers, getCustomers } from '../../../utils/service/customerService';
 
+//in future we can delete this part as it is handled on teh main page now
 const SingleEntryCreation = () => {
 
     const navigate = useNavigate();
@@ -36,8 +37,9 @@ const CustomerDetailsMap  = (name) =>  {
 
 
   const handleCreateEntry = async()=>{
-    await createCustomers(formData);
-    setSelectedCustomer(null)
+    // await createCustomers(formData);
+    // setSelectedCustomer(null)
+    console.log("Creating entry with data:", formData);
 
   }
 

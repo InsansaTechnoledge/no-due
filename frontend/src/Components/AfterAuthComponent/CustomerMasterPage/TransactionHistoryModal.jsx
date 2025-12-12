@@ -12,78 +12,10 @@ export default function TransactionHistoryModal({
 }) {
   if (!customer) return null;
 
-  // const [loading, setLoading] = useState(true);
-
   console.log(transactions);
 
-
-  // useLayoutEffect(()=>{
-  //   async function loadTxn(){
-  //     try {
-  //         const tsx = await getCustomerTransactions(customer._id);
-  //         setTransactions(tsx.data?.transactions || tsx.transactions || []);
-    
-  //       }
-  //     catch (error) {
-  //       console.error(error);
-  //     } finally{
-  //       setLoading(false);
-  //     }
-  //   }
-  //   loadTxn();
-  // },[]);
-
-  
-  // const transactions = [
-  //           {
-  //               "_id": "693be3910fa689781d94e210",
-  //               "customerId": "693badedcb2c3e2b9e2a5a30",
-  //               "type": "DUE_EDITED",
-  //               "amount": 50,
-  //               "previousDue": 50,
-  //               "newDue": 0,
-  //               "metadata": {
-  //                   "note": "taken cash no due is here",
-  //                   "operatorId": "69392b73c70447c56f9a888c"
-  //               },
-  //               "createdAt": "2025-12-12T09:42:41.913Z",
-  //               "updatedAt": "2025-12-12T09:42:41.913Z",
-  //               "__v": 0
-  //           },
-  //           {
-  //               "_id": "693be37f0fa689781d94e20b",
-  //               "customerId": "693badedcb2c3e2b9e2a5a30",
-  //               "type": "PAYMENT",
-  //               "amount": 150,
-  //               "previousDue": 200,
-  //               "newDue": 50,
-  //               "metadata": {
-  //                   "note": "recovered 70%",
-  //                   "operatorId": "69392b73c70447c56f9a888c"
-  //               },
-  //               "createdAt": "2025-12-12T09:42:23.580Z",
-  //               "updatedAt": "2025-12-12T09:42:23.580Z",
-  //               "__v": 0
-  //           },
-  //           {
-  //               "_id": "693be3730fa689781d94e206",
-  //               "customerId": "693badedcb2c3e2b9e2a5a30",
-  //               "type": "DUE_ADDED",
-  //               "amount": 200,
-  //               "previousDue": 0,
-  //               "newDue": 200,
-  //               "metadata": {
-  //                   "note": "for pizza",
-  //                   "operatorId": "69392b73c70447c56f9a888c"
-  //               },
-  //               "createdAt": "2025-12-12T09:42:11.137Z",
-  //               "updatedAt": "2025-12-12T09:42:11.137Z",
-  //               "__v": 0
-  //           }
-  //       ];
-
   const [activeTab, setActiveTab] = useState("VIEW");
-  const [form, setForm] = useState({ amount: "", note: "" });
+  const [form, setForm] = useState({ amount: "", note: "" , lastDuePaymentDate : ""});
 
   // Badge style function
   const getActionBadge = (type) => {
@@ -106,7 +38,7 @@ export default function TransactionHistoryModal({
     const handleAddBill = async () => {
       
       try {
-        const data = await addDueToCustomer(customer._id, { amount: Number(form.amount), note: form.note });
+        const data = await addDueToCustomer(customer._id, { amount: Number(form.amount), note: form.note,lastDuePaymentDate : form.lastDuePaymentDate });
         setCurrentCustomer(c => ({ ...c, currentDue: data.data?.currentDue || data.currentDue }));
         setTransactions(t => [data.data?.transaction || data.transaction, ...t]);
         // setShowAddBill(false);
@@ -153,14 +85,17 @@ export default function TransactionHistoryModal({
       case "VIEW":
         return (
           <div className="max-h-90 overflow-y-auto scroll-smooth">   {/* <-- add height */}
+          {/* <table className="w-full rounded-lg text-sm outline-none"> */}
           <table className="w-full rounded-lg text-sm outline-none">
+
             <thead className="bg-gray-50 text-gray-600 text-xs uppercase  sticky top-0 z-10">
               <tr>
                 <th className="p-2 text-left">Type</th>
                 <th className="p-2 text-right">Amount</th>
                 <th className="p-2 text-right">Prev Due</th>
                 <th className="p-2 text-right">New Due</th>
-                <th className="p-2 text-left">Date</th>
+                 <th className="p-2 text-left">Last Payment Date</th>
+                <th className="p-2 text-left">Created At</th>
                 <th className="p-2 text-left">Note</th>
               </tr>
             </thead>
@@ -168,10 +103,13 @@ export default function TransactionHistoryModal({
             <tbody>
               {transactions.map((tx) => (
                 <tr key={tx._id} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-2">{getActionBadge(tx.type)}</td>
+                  <td className="p-2 ">{getActionBadge(tx.type)}</td>
                   <td className="p-2 text-right font-medium">₹{tx.amount}</td>
                   <td className="p-2 text-right">₹{tx.previousDue}</td>
                   <td className="p-2 text-right font-semibold">₹{tx.newDue}</td>
+                   <td className="p-2 whitespace-nowrap">
+                    {tx.lastDuePaymentDate ? new Date(tx.lastDuePaymentDate).toLocaleDateString() : "-"}
+                  </td>
                   <td className="p-2 whitespace-nowrap">
                     {new Date(tx.createdAt).toLocaleString()}
                   </td>
@@ -219,6 +157,17 @@ export default function TransactionHistoryModal({
               onChange={(e) => setForm({ ...form, note: e.target.value })}
             />
 
+            <input
+              type="date"
+              placeholder="Last Due Payment Date"
+              className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl
+                          focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2
+                          focus:border-gray-300 focus:bg-gray-100 border-transparent
+                          transition-all duration-200 outline-none"
+              value={form.lastDuePaymentDate}
+              onChange={(e) => setForm({ ...form, lastDuePaymentDate: e.target.value })}
+            />
+
             <button className="bg-green-600 text-white px-4 py-2 rounded-lg w-full border-none">
               Add Due
             </button>
@@ -231,7 +180,7 @@ export default function TransactionHistoryModal({
             onSubmit={(e) => {
               e.preventDefault();
               handleEditDue(form);
-              setForm({ amount: "", note: "" });
+              setForm({ amount: "", note: "" , lastDuePaymentDate : "" });
             }}
             className="space-y-3"
           >
@@ -254,6 +203,17 @@ export default function TransactionHistoryModal({
                          transition-all duration-200 outline-none"
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
+            />
+
+            <input
+              type="date"
+              placeholder="Last Due Payment Date"
+              className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl
+                          focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2
+                          focus:border-gray-300 focus:bg-gray-100 border-transparent
+                          transition-all duration-200 outline-none"
+              value={form.lastDuePaymentDate}
+              onChange={(e) => setForm({ ...form, lastDuePaymentDate: e.target.value })}
             />
 
             <button  className="bg-yellow-600 text-white px-4 py-2 rounded-lg w-full border-none">
