@@ -20,7 +20,7 @@ function calculateCustomerStatus(currentDue, lastDueDate) {
 
 export async function addDue(req, res) {
   const { id: customerId } = req.params;
-  let { amount, note, invoiceId } = req.body;
+  let { amount, note, invoiceId , lastDuePaymentDate } = req.body;
 
   amount = Number(amount);
 
@@ -45,10 +45,14 @@ export async function addDue(req, res) {
       amount: amount,
       previousDue,
       newDue,
-      metadata: { note, invoiceId, operatorId: req.user?.id || null }
+      metadata: { note, invoiceId, operatorId: req.user?.id || null },
+      lastDuePaymentDate
     });
 
-    const status = calculateCustomerStatus(newDue, tx.createdAt);
+        //for now we have not added the invoice validation
+  //and the overdues are calculated based on the last transaction date only
+  //so here the lastDueDate is same as the transaction createdAt date
+    const status = calculateCustomerStatus(newDue, tx.lastDuePaymentDate || tx.createdAt);
 
     customer.currentDue = newDue;
     customer.lastTransaction = tx._id;
