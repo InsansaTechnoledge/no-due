@@ -13,3 +13,46 @@ export const registerUser = async (req, res) => {
     }
     
 };
+
+export const updateUser = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const updates = req.body;
+
+        const existingProfile = await User.findById(userId);
+
+        if (!existingProfile) {
+            return new APIError(404, ['Profile not found']).send(res);
+        }
+
+        // Prevent emptying fields once filled
+        const protectedFields = [
+            "companyName",
+            "GSTNumber",
+            "fullName",
+            "phoneNumber",
+            "email"
+        ];
+
+        protectedFields.forEach(field => {
+            if (
+                existingProfile[field] &&       // already has value in db
+                (!updates[field] || updates[field].trim() === "")  // trying to empty it
+            ) {
+                updates[field] = existingProfile[field]; // keep old value
+            }
+        });
+
+        const updatedProfile = await User.findOneAndUpdate(
+            { _id: userId },
+            updates,
+            { new: true }
+        );
+
+        return new APIResponse(200, { profile: updatedProfile }, 'Profile updated successfully').send(res);
+    } catch (error) {
+        console.error("Profile update error:", error);
+        return new APIError(500, [error.message]).send(res);        
+        };
+};
+
