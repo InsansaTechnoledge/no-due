@@ -5,7 +5,6 @@ import PageHeaders from '../../../utils/AfterAuthUtils/PageHeaders';
 import { useNavigate } from 'react-router-dom';
 import { addDueToCustomer, createCustomers, getCustomers } from '../../../utils/service/customerService';
 import { toast } from 'react-toastify';
-import CustomerCreation from '../CustomerCreation/CustomerCreation';
 
 //in future we can delete this part as it is handled on teh main page now
 const SingleEntryCreation = () => {
@@ -68,7 +67,17 @@ const CustomerDetailsMap  = (name) =>  {
       {/* Main Content */}
       <div className="flex flex-col gap-6 mt-6">
         {/* Customer Picker */}
-        
+        <CustomerPicker
+          items={customers} // passing entire customers
+          selected={formData.customer}
+          onSelect={(value) => {
+            if (value === "add-new") navigate("../customer-creation");
+            else{
+               setSelectedCustomer(value.name);
+               setFormData(prev=>({...prev, customer: value}));
+            }
+          }}
+        />
 
         <CustomerCreation/>
 
