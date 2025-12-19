@@ -185,54 +185,68 @@ static async getTemplateAndType(transactionId, scheduledFor) {
     return reminder;
   }
 
+  //used by cron job
+  async processScheduledReminders() {
+    const now = new Date();
+    const dueReminders = await Reminder.find({
+      status: "pending",
+      scheduledFor: { $lte: now }
+    }).populate({
+      path: 'transactionId',
+      populate: { path: 'customerId' }
+    });
 
-  //generate this for schedular(corn job ) but have to test
-  // async processScheduledReminders() {
-  //   const now = new Date();
-  //   const dueReminders = await Reminder.find({
-  //     status: "pending",
-  //     scheduledFor: { $lte: now }
-  //   }).populate({
-  //     path: 'transactionId',
-  //     populate: { path: 'customerId' }
-  //   });
+    console.log(`Processing ${dueReminders.length} scheduled reminders...`);
 
-  //   console.log(`Processing ${dueReminders.length} scheduled reminders...`);
+    for (const reminder of dueReminders) {
+      try {
+        if (!reminder.transactionId || !reminder.transactionId.customerId) {
+          console.warn(`Reminder ${reminder._id} has invalid data, skipping.`);
+          reminder.status = "failed";
+          reminder.lastError = "Invalid data linked";
+          await reminder.save();
+          continue;
+        }
 
-  //   for (const reminder of dueReminders) {
-  //     try {
-  //       if (!reminder.transactionId || !reminder.transactionId.customerId) {
-  //         console.warn(`Reminder ${reminder._id} has invalid data, skipping.`);
-  //         reminder.status = "failed";
-  //         reminder.lastError = "Invalid data linked";
-  //         await reminder.save();
-  //         continue;
-  //       }
+        const customer = reminder.transactionId.customerId;
+        // Use variables from reminder or fallback
+        const variables = reminder.templateVariables || []; //name, amount, dueData
 
-  //       const customer = reminder.transactionId.customerId;
-  //       // Use variables from reminder or fallback
-  //       const variables = reminder.templateVariables || [];
+        //have to check if already manually sended or not
+        //if sended then skip it
+        const userRecentRemainder = await Reminder.findOne({
+          customerId: reminder.customerId,
+          remainderType: reminder.remainderType, //doubt here
+          status: "sent",
+          sentAt:{$gte: new Date(Date.now()-24*60*60*1000)}
+        }); // user all remainder 
+        //now chek if sended it around 1 day +-
 
-  //       await whatsappService.sendTemplateMessage({
-  //         to: customer.mobile || customer.phone,
-  //         templateName: reminder.whatsappTemplate.name,
-  //         variables: variables
-  //       });
+        if(userRecentRemainder){
+          return; //already sent (may be manually)
+        } 
 
-  //       reminder.status = "sent";
-  //       reminder.sentAt = new Date();
-  //       await reminder.save();
-  //       console.log(`Reminder ${reminder._id} sent.`);
+        await whatsappService.sendTemplateMessage({
+          to: customer.mobile,
+          templateName: reminder.whatsappTemplate.name,
+          variables: variables
+        });
 
-  //     } catch (error) {
-  //       console.error(`Failed to send reminder ${reminder._id}:`, error);
-  //       reminder.status = "failed";
-  //       reminder.lastError = error.message;
-  //       reminder.attempts += 1;
-  //       await reminder.save();
-  //     }
-  //   }
-  // }
+        reminder.status = "sent";
+        reminder.sentAt = new Date();
+        reminder.source = "auto";
+        await reminder.save();
+        console.log(`Reminder ${reminder._id} sent.`);
+
+      } catch (error) {
+        console.error(`Failed to send reminder ${reminder._id}:`, error);
+        reminder.status = "failed";
+        reminder.lastError = error.message;
+        reminder.attempts += 1;
+        await reminder.save();
+      }
+    }
+  }
 }
 
 export default new ReminderService();
