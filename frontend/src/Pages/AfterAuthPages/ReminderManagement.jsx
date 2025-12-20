@@ -27,6 +27,7 @@ export default function ReminderManagement() {
       try {
         const res = await getAllRemainders();
         setData(res.data.data || []);
+        console.log(res.data.data);
 
       } catch (error) {
         console.log(error);
@@ -48,7 +49,7 @@ export default function ReminderManagement() {
         company: "-", // not present yet
       },
 
-      dueAmount: r.transactionId?.amount || 0,
+      dueAmount: r.customerId.currentDue || 0,
 
       sendAt: r.scheduledFor,
 
