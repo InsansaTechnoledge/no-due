@@ -121,7 +121,7 @@ class ReminderService {
   }
 
   //helpher function
-static async getTemplateAndType(transactionId, scheduledFor) {
+ async getTemplateAndType(transactionId, scheduledFor) {
   // fetch transaction
   const tx = await Transaction.findById(transactionId);
   if (!tx) {
@@ -169,15 +169,16 @@ static async getTemplateAndType(transactionId, scheduledFor) {
     if (!transaction) throw new Error("Transaction not found");
 
 
-    const tempAndtype = getTemplateAndType(transactionId, scheduledFor);
+    const tempAndtype = await this.getTemplateAndType(transactionId, scheduledFor);
+    console.log("tempAndtype",tempAndtype);
 
     const reminder = await Reminder.create({
       customerId: transaction.customerId._id,
       transactionId: transaction._id,
-      reminderType: tempAndtype.remainderType, // maybe calculated from scheduledFor data
+      reminderType: tempAndtype.reminderType, // maybe calculated from scheduledFor data
       message: "Scheduled Reminder",
       whatsappTemplate: { name: tempAndtype.templateName, language: "en" },
-      templateVariables: variables,
+      templateVariables: tempAndtype.reminderType==='due_today'?variables.slice(0,2):variables, //slicing due to template requirement for this type
       scheduledFor: new Date(scheduledFor),
       status: "pending"
     });
@@ -208,14 +209,16 @@ static async getTemplateAndType(transactionId, scheduledFor) {
           continue;
         }
 
-        const customer = reminder.transactionId.customerId;
         // Use variables from reminder or fallback
-        const variables = reminder.templateVariables || []; //name, amount, dueData
-
+        const variables = reminder.templateVariables || [];//
         //have to check if already manually sended or not
         //if sended then skip it
+
+        const customer = reminder.transactionId.customerId;
+        // console.log("reminder.transactionId.customerId",reminder.transactionId.customerId);
+
         const userRecentRemainder = await Reminder.findOne({
-          customerId: reminder.customerId,
+          customerId: customer._id,
           remainderType: reminder.remainderType, //doubt here
           status: "sent",
           sentAt:{$gte: new Date(Date.now()-24*60*60*1000)}
@@ -226,8 +229,10 @@ static async getTemplateAndType(transactionId, scheduledFor) {
           return; //already sent (may be manually)
         } 
 
+        // console.log(`91${customer.mobile}`);
+
         await whatsappService.sendTemplateMessage({
-          to: customer.mobile,
+          to: `91${customer.mobile}`,
           templateName: reminder.whatsappTemplate.name,
           variables: variables
         });
@@ -240,8 +245,9 @@ static async getTemplateAndType(transactionId, scheduledFor) {
 
       } catch (error) {
         console.error(`Failed to send reminder ${reminder._id}:`, error);
-        reminder.status = "failed";
+        // reminder.status = "failed"; //skipping just for testing
         reminder.lastError = error.message;
+        reminder.source = 'auto';
         reminder.attempts += 1;
         await reminder.save();
       }
