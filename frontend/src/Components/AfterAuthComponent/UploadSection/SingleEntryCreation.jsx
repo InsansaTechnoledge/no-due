@@ -1,5 +1,4 @@
 import React, { use, useEffect, useState } from 'react'
-import CustomerPicker from './CustomerPicker';
 // import { CustomerDetailsMap, CustomerNames } from '../../../utils/constants';
 import PageHeaders from '../../../utils/AfterAuthUtils/PageHeaders';
 import { useNavigate } from 'react-router-dom';

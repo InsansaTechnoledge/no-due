@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { ChevronDown, Plus, UserRound } from "lucide-react";
 
-function CustomerPicker({ items = [], onSelect, selected }) {
+function CustomerPicker({ items = [{name:"baljit singh",id:"123",gender:"male"},{name:"customer 2", id:"124",gender:"female"},{name:"yo yo honey singh", id:"124", gender:"male"}], onSelect, selected }) {
   //selected here use for label naming
 
   const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState("Choose Customer");
+  const [label, setLabel] = useState("Choose User to chat");
   const btnRef = useRef(null);
   const popRef = useRef(null);
   const [searchText, setSearchText] = useState("");
@@ -43,7 +43,7 @@ function CustomerPicker({ items = [], onSelect, selected }) {
 
   useEffect(()=>{
     if(!selected){
-      setLabel("Choose customer");
+      setLabel("Choose User to Chat");
     }else{
       setLabel(selected?.name);
     }
@@ -145,7 +145,7 @@ function CustomerPicker({ items = [], onSelect, selected }) {
             )
           }
       
-          <button
+          {/* <button
             type="button"
             onClick={() => choose("add-new", "Add new customer")}
             className="flex w-full items-center gap-2 rounded-b-lg border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-green-600
@@ -154,7 +154,7 @@ function CustomerPicker({ items = [], onSelect, selected }) {
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add new customer
-          </button>
+          </button> */}
         </div>
       )}
     </div>
