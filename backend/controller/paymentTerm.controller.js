@@ -1,6 +1,6 @@
-import PaymentTerm from "../model/PaymentTerm.model";
-import { APIError } from "../utils/ResponseAndError/ApiError.utils";
-import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils";
+import PaymentTerm from "../model/PaymentTerm.model.js";
+import { APIError } from "../utils/ResponseAndError/ApiError.utils.js";
+import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils.js";
 
 export const getUserPaymentTerms = async (req, res) => {
     try {
