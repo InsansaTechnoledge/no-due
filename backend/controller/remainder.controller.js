@@ -18,7 +18,7 @@ export const getAllRemainders = async (req, res) => {
 
     console.log(filters);
     const reminders = await Reminder.find(filters)
-      .populate("customerId", "name mobile")
+      .populate("customerId", "name mobile currentDue")
       .populate({
         path: 'transactionId',
         select: 'amount dueDate'
@@ -78,7 +78,7 @@ export const scheduleWhatsappRemainder = async (req, res) => {
     // templateName = "payment_due_today": i'm not taking templateName it will be be calculated on scheduleFor
 
 
-    console.log("remainder tempalte name", templateName );
+    // console.log("remainder tempalte name", templateName );
 
     if (!transactionId || !scheduledFor) {
       return new APIError(400, ["transactionId and scheduledFor are required"], "Validation Error").send(res);

@@ -1,4 +1,5 @@
-
+import React, { use, useEffect, useState } from 'react'
+// import { CustomerDetailsMap, CustomerNames } from '../../../utils/constants';
 import PageHeaders from '../../../utils/AfterAuthUtils/PageHeaders';
 import CustomerCreation from '../../../Pages/AfterAuthPages/CustomerCreationPage';
 const SingleEntryCreation = () => {

@@ -13,7 +13,51 @@ export default function ReminderManagement() {
   const [openNew, setOpenNew] = useState(false);
   const [drawer, setDrawer] = useState(null);
 
-  const data = MOCK_REMINDERS;
+  // const data = MOCK_REMINDERS;
+
+
+
+  useEffect(() => {
+
+    async function fetchData() {
+      try {
+        const res = await getAllRemainders();
+        setData(res.data.data || []);
+        console.log(res.data.data);
+
+      } catch (error) {
+        console.log(error);
+        console.log("error while loading remainder data");
+      }
+
+    }
+
+    fetchData();
+
+  }, []);
+
+  const normalizeData = useMemo(() => {
+    return data.map((r) => ({
+      id: r._id,
+      customer: {
+        name: r.customerId?.name || "-",
+        mobile: r.customerId?.mobile || "-",
+        company: "-", // not present yet
+      },
+
+      dueAmount: r.customerId.currentDue || 0,
+
+      sendAt: r.scheduledFor,
+
+      status: r.status === "pending" ? "scheduled" : r.status,
+
+      template: r.whatsappTemplate?.name,
+
+      channel: ["whatsapp"],
+
+      raw: r,
+    }));
+  }, [data]);
 
   const filtered = useMemo(() => {
     return data.filter((r) => {

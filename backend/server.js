@@ -16,23 +16,24 @@ const startServer = async () => {
 
     try {
         await connectDB();
-        const { default: app } = await import('./config/express.config.js');
+       
 
+        const { default: app } = await import('./config/express.config.js');
+        
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode.`);
         });
-
-        const { default: reminderService } = await import(
-            "./services/remainder.service.js"
-        );
-
-        setInterval(() => {
-            reminderService.processScheduledReminders().catch(console.error);
-        }, 5 * 60 * 60 * 1000); // Check every 5 minute
-
+        
+        const { default: jobForRemainder } = await import("./utils/cronJob/job.js");
+        await jobForRemainder();
         app.get('/', (req, res) => {
             res.send('API is running...');
+            
         });
+        
+
+
+
 
     } catch (error) {
         console.error("Error starting the server:", error);
