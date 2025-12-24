@@ -25,6 +25,7 @@ import { useAuth } from "../context/AuthContext";
 import CustomerDetail from "../Pages/CustomerDetail";
 import PaymentReminder from "../Pages/PaymentReminder/PaymentReminder"
 import WhatsappChats from "../Pages/WhatsappChats/WhatsappChats"
+import AllTransaction from "../Pages/AfterAuthPages/AllTransaction"
 
 const PageLinks = () => {
   const location = useLocation();
@@ -68,7 +69,6 @@ const PageLinks = () => {
 
         <Route path="dashboard" element={<AfterAuthLanding />} />
         <Route path="customer-master" element={<CustomerMaster />} />
-        <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="upload-center" element={<UploadCenter />} />
         <Route path="reminder-management" element={<ReminderManagement />} />
         <Route path="reminder-history" element={<ReminderHistory />} />
@@ -79,7 +79,8 @@ const PageLinks = () => {
         {/* <Route path='customer-creation' element={<CustomerCreationPage/>}/> */}
         <Route path="payment-reminder" element={<PaymentReminder />} />
         <Route path="whatsapp-chat" element={<WhatsappChats/>} />
-        
+        <Route path="all-transactions" element={<AllTransaction/>} />
+         
 
       </Route>
 
