@@ -81,7 +81,8 @@ export const getChatHistory = async (req, res)=>{
   try {
     const {customerId} = req.query;
   
-    const response = await whatsappMessage.find(customerId);
+    const response = await whatsappMessage.find({customerId});
+    // console.log(response);
   
     return new APIResponse(200, response, "fetched", true).send(res);
     
