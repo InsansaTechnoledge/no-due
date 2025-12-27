@@ -14,14 +14,10 @@ export default function WhatsappChats() {
   const [customers, setCustomers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const CHAT_UI = {  OPEN: "open", MINIMIZED: "minimized", CLOSED: "closed",};
+  const [chatUI, setChatUI] = useState(CHAT_UI.CLOSED);
 
-  const handleOnCustomerSelect = (customer) => {
-    if(currentCustomer && customer._id===currentCustomer._id) return;
-    setCurrentCustomer(customer);
-    setMessages([]);
-    //remove the existing room, and join new room
-    //also make sure changed customer history is being loaded
-  };
+
 
   useEffect(() => {
     async function loadCustomers() {
@@ -142,27 +138,51 @@ export default function WhatsappChats() {
   }, []);
 
 
+
+  const handleOnCustomerSelect = (customer) => {
+  if (currentCustomer && customer._id === currentCustomer._id && chatUI==='open') return;
+  setCurrentCustomer(customer);
+  setMessages([]);
+  setChatUI(CHAT_UI.OPEN);
+};
+
+
+
   return (
-    <div className="h-[calc(100vh-64px)] grid grid-cols-12 gap-4 ">
+    <div className="h-[calc(100vh-64px)] grid grid-cols-12 bg-gray-300/40 rounded-2xl gap-4 sticky ">
       {/* LEFT: Customer Picker */}
-      <div className="col-span-4 bg-white rounded-xl shadow-sm p-4">
+      <div className="col-span-4 bg-white rounded-xl shadow-sm p-4 m-2">
         <CustomerPicker items={customers} onSelect={handleOnCustomerSelect} selected={currentCustomer} />
       </div>
 
  {/* RIGHT: Chat Area */}
-<div
-  className=" fixed right-24 w-1/2 h-[calc(100vh-8.5rem)] rounded-xl shadow-sm flex flex-col bg-white  ml-auto "
->
-  {!currentCustomer ? (
-    <EmptyChatState />
-  ) : (
-    <>
-      <ChatHeader customer={currentCustomer} />
-      <ChatMessages messages={messages} loading={loading} />
-      <ChatInput onSend={handleSendMessage} />
-    </>
-  )}
-</div>
+    {chatUI !== CHAT_UI.CLOSED && (
+      <div
+        className={`
+          fixed right-8 bottom-6 rounded-xl shadow-lg flex flex-col
+          transition-all duration-300 ease-in-out
+          ${chatUI === CHAT_UI.MINIMIZED
+            ? "w-80 h-14"
+            : "w-1/2 h-[calc(100vh-8.5rem)]"}
+        `}
+      >
+        <ChatHeader
+          customer={currentCustomer}
+          onClose={() => setChatUI(CHAT_UI.CLOSED)}
+          onMinimize={() => setChatUI(CHAT_UI.MINIMIZED)}
+          onExpand={()=>setChatUI(CHAT_UI.OPEN)}
+          isMinimized={chatUI === CHAT_UI.MINIMIZED}
+        />
+
+        {chatUI === CHAT_UI.OPEN && (
+          <>
+            <ChatMessages messages={messages} loading={loading} />
+            <ChatInput onSend={handleSendMessage} />
+          </>
+        )}
+      </div>
+    )}
+
 
     </div>
   );

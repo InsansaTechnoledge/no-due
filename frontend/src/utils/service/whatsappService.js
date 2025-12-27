@@ -4,7 +4,7 @@ export const whatsappReply = async(payload)=>{
     return response.data;
 }
 
-export const getChatHistory = async (id)=>{
-    const response = await api.get(`/v1/whatsapp/history?${id}}`);
+export const getChatHistory = async (customerId)=>{
+    const response = await api.get(`/v1/whatsapp/history?customerId=${customerId}`);
     return response.data;
 }
