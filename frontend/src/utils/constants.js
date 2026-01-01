@@ -97,6 +97,11 @@ export const SidebarFeatures = [
             name:"Upload or Add Customer",
             icon:"UploadIcon",
             path:"upload-center"
+          },
+          {
+            name:"All Transactions",
+            icon:"TransactionIcon",
+            path:"transactions"
           }
         ]
     },
