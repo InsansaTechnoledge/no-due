@@ -25,6 +25,7 @@ import CustomerDetail from "../Pages/CustomerDetail";
 import PaymentReminder from "../Pages/PaymentReminder/PaymentReminder"
 import WhatsappChats from "../Pages/WhatsappChats/WhatsappChats"
 import AllTransaction from "../Pages/AfterAuthPages/AllTransaction"
+import TransactionHistoryDuePage from "../Components/AfterAuthComponent/CustomerMasterPage/Transactions";
 
 const PageLinks = () => {
   const location = useLocation();
@@ -68,6 +69,7 @@ const PageLinks = () => {
 
         <Route path="dashboard" element={<AfterAuthLanding />} />
         <Route path="customer-master" element={<CustomerMaster />} />
+        <Route path="transactions" element={<TransactionHistoryDuePage />} />
         <Route path="upload-center" element={<UploadCenter />} />
         <Route path="reminder-management" element={<ReminderManagement />} />
         <Route path="reminder-history" element={<ReminderHistory />} />
