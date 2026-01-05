@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 let connection;
-let connection2;
 
 const connectDB = async() => {
   try {
