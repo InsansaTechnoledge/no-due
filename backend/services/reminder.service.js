@@ -230,10 +230,10 @@ class ReminderService {
         });
 
 
-        if (recent) {
-          console.log("skipping, recently sended within 24 hr");
-          continue
-        };
+        // if (recent) {
+        //   console.log("skipping, recently sended within 24 hr");
+        //   continue
+        // };
 
         await whatsappService.sendTemplateMessage({
           to: `${tx.customerId.mobile}`,
