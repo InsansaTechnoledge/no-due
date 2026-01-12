@@ -32,6 +32,22 @@ const addressSchema = new Schema({
 },
     { _id: false });
 
+const whatsappSchema = new Schema({
+
+    provider:{
+        type: String,
+        default:"meta"
+    },
+    status: {
+        type: String,
+        enum: ['not_connected', 'connected'],
+        default: 'not_connected'
+    },
+    wabaId: String,
+    phoneNumberId: String,
+    accessToken: String,
+}, { _id: false });
+
 const userSchema = new Schema({
     businessName: {
         type: String,
@@ -40,28 +56,28 @@ const userSchema = new Schema({
         maxlength: [70, "Name can be at most 70 characters long"],
         trim: true,
     },
-      fname: {
-    type: String,
-    trim: true,
-    minLength: [2, 'enter a valid first name'],
-    validate: {
-      validator: function (v) {
-        return /^[a-zA-Z]+$/.test(v);
-      },
-      message: 'First name should contain only alphabets',
-    }
-  },
-  lname: {
-    type: String,
-    trim: true,
-    minLength: [2, 'enter a valid last name'],
-    validate: {
-      validator: function (v) {
-        return /^[a-zA-Z]+$/.test(v);
-      },
-      message: 'Last name should contain only alphabets',
-    }
-  },
+    fname: {
+        type: String,
+        trim: true,
+        minLength: [2, 'enter a valid first name'],
+        validate: {
+            validator: function (v) {
+                return /^[a-zA-Z]+$/.test(v);
+            },
+            message: 'First name should contain only alphabets',
+        }
+    },
+    lname: {
+        type: String,
+        trim: true,
+        minLength: [2, 'enter a valid last name'],
+        validate: {
+            validator: function (v) {
+                return /^[a-zA-Z]+$/.test(v);
+            },
+            message: 'Last name should contain only alphabets',
+        }
+    },
     email: {
         type: String,
         required: [true, "Email is required"],
@@ -153,6 +169,8 @@ const userSchema = new Schema({
         type: Types.ObjectId,
         ref: 'SubscriptionPlan',
     },
+    whatsapp: whatsappSchema,
+
 }, { timestamps: true });
 
 userSchema.pre('save', async function () {
@@ -160,7 +178,7 @@ userSchema.pre('save', async function () {
     try {
         const salt = bcrypt.genSaltSync(10);
         this.password = bcrypt.hashSync(this.password, salt);
-        return ;
+        return;
     } catch (err) {
         return next(err);
     }

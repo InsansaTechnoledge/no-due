@@ -3,6 +3,7 @@ import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils.js";
 import {APIError} from "../utils/ResponseAndError/ApiError.utils.js"
 import whatsappMessage from "../model/whatsappMessage.modal.js"
 import whatsappConversation from "../model/whatsappConversation.js";
+import User from "../model/user.model.js";
 
 export const sendReply = async (req, res) => {
   const { to, context, text } = req.body;
@@ -126,4 +127,109 @@ export const getAllConversations = async (req, res)=>{
     return new APIError(500, error, "Failed to fetch conversations", false).send(res);
   }
 }
+
+
+export const connectWhatsApp = async (req, res) => {
+  // if (!process.env.WHATSAPP_EMBEDDED_ENABLED) {
+  //   return res.status(403).json({
+  //     success: false,
+  //     message: "WhatsApp Embedded Signup not enabled yet",
+  //   });
+  // }
+
+  const redirectUri = `${process.env.API_BASE_URL}/api/v1/whatsapp/oauth/callback`;
+
+  const url =
+    `https://www.facebook.com/v19.0/dialog/oauth` +
+    `?client_id=${process.env.META_APP_ID}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&state=${req.user._id}` +
+    `&scope=whatsapp_business_management,whatsapp_business_messaging`;
+
+  return new APIResponse(200, { url }, "WhatsApp OAuth URL", true).send(res);
+};
+
+export const whatsappOAuthCallback = async (req, res) => {
+  const { code, state } = req.query; // state = userId
+
+  if (!code || !state) {
+    return res.status(400).send("Invalid OAuth callback");
+  }
+
+  try {
+    // 1️⃣ Exchange code → access token
+    const tokenRes = await axios.get(
+      "https://graph.facebook.com/v19.0/oauth/access_token",
+      {
+        params: {
+          client_id: process.env.META_APP_ID,
+          client_secret: process.env.META_APP_SECRET,
+          redirect_uri: `${process.env.API_BASE_URL}/api/v1/whatsapp/oauth/callback`,
+          code,
+        },
+      }
+    );
+
+    const accessToken = tokenRes.data.access_token;
+
+    // 2️⃣ Get WhatsApp Business Accounts
+// 2️⃣ Get businesses user manages
+const businessRes = await axios.get(
+  "https://graph.facebook.com/v19.0/me/businesses",
+  {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }
+);
+
+const businessId = businessRes.data.data?.[0]?.id;
+if (!businessId) throw new Error("No business found");
+
+// 3️⃣ Get WABA from business
+const wabaRes = await axios.get(
+  `https://graph.facebook.com/v19.0/${businessId}/owned_whatsapp_business_accounts`,
+  {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  }
+);
+
+const wabaId = wabaRes.data.data?.[0]?.id;
+if (!wabaId) throw new Error("No WABA found");
+
+
+    // 3️⃣ Get phone numbers
+    const phoneRes = await axios.get(
+      `https://graph.facebook.com/v19.0/${wabaId}/phone_numbers`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    const phoneNumberId = phoneRes.data.data?.[0]?.id;
+    if (!phoneNumberId) throw new Error("No phone number found");
+
+    // 4️⃣ Save to DB
+    await User.findByIdAndUpdate(state, {
+      whatsapp: {
+        status: "connected",
+        provider: "meta",
+        wabaId,
+        phoneNumberId,
+        accessToken,
+      },
+    });
+
+    // 5️⃣ Redirect back to app
+    return res.redirect(
+      `${process.env.CLIENT_BASE_URL}/settings/whatsapp?connected=true`
+    );
+  } catch (err) {
+    console.error("WhatsApp OAuth Error:", err.response?.data || err.message);
+    return res.redirect(
+      `${process.env.CLIENT_BASE_URL}/settings/whatsapp?connected=false`
+    );
+  }
+};
+
+
+
 
