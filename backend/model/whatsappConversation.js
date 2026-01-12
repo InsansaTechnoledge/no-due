@@ -35,8 +35,6 @@ const whatsappConversationSchema = new Schema({
   }
 }, { timestamps: true });
 
-
-console.log("connection",connection);
 const whatsappConversation =  connection.model("WhatsappConversation", whatsappConversationSchema);
 
 export default whatsappConversation;

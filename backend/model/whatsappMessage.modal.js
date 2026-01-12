@@ -74,7 +74,6 @@ const whatsappMessageSchema = new Schema({
   { timestamps: true }
 );
 
-console.log("conn",connection)
 const whatsappMessage =  connection.model("WhatsappMessage", whatsappMessageSchema);
 
 export default whatsappMessage;

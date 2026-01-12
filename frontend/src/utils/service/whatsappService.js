@@ -13,3 +13,8 @@ export const getAllconversations = async ()=>{
     const response = await api.get(`/v1/whatsapp/conversations`);
     return response.data;
 }
+
+export const connectWhatsApp = async()=>{
+    const response = await api.get(`/v1/whatsapp/connect`);
+    return response.data;
+}   
