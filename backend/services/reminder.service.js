@@ -3,6 +3,7 @@ import Transaction from "../model/transaction.model.js";
 import Customer from "../model/customer.model.js";
 import whatsappService from "./whatsapp.service.js";
 import mongoose from "mongoose";
+import { canSendReminder } from "../middleware/reminderLimitMiddleware.js";
 
 const REMINDER_TYPES = {
   BEFORE_DUE: "before_due",
@@ -220,14 +221,21 @@ class ReminderService {
           continue;
         }
 
+        // prevent sending same reminder type again within cooldown window
+    const canSend = await canSendReminder({
+      transactionId: tx._id,
+      reminderType: reminder.reminderType,
+    });
 
-        const recent = await Reminder.findOne({
-          transactionId: tx._id,
-          reminderType: reminder.reminderType,
-          status: "sent",
-          // source: "auto",
-          sentAt: { $gte: 1000 * 60 * 60 * 24 },
-        });
+    if (!canSend) continue;
+
+        // const recent = await Reminder.findOne({
+        //   transactionId: tx._id,
+        //   reminderType: reminder.reminderType,
+        //   status: "sent",
+        //   // source: "auto",
+        //   sentAt: { $gte: 1000*60*60*24 },
+        // });
 
 
         // if (recent) {
