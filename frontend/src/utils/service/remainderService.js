@@ -6,6 +6,13 @@ export const getAllRemainders = async (params = {}) => {
     return response;
 }
 
+export const getAuditLogs = async (mobile) => {
+    const response = await api.get(`/v1/remainders/audit-logs/${mobile}`);
+    return response.data;
+}
+
+
+
 export const sendReminderNow = async (data) => {
     const response = await api.post("/v1/remainders/send-now", data);
     return response.data;

@@ -24,9 +24,9 @@ class ReminderService {
   async createForDue({ transactionId }) {
     try {
       const transaction = await Transaction
-        .findById(transactionId)
-        .populate("customerId")
-
+      .findById(transactionId)
+      .populate("customerId")
+      
       if (!transaction) throw new Error("Transaction not found");
       if (transaction.type !== "DUE_ADDED") {
         throw new Error("Reminders only allowed for DUE_ADDED");
@@ -36,6 +36,8 @@ class ReminderService {
       const customer = await Customer
         .findById(transaction.customerId._id)
         .populate("paymentTerm");
+
+      console.log("payment term:\n",customer?.paymentTerm);
 
       if (!customer?.paymentTerm) return;
 
@@ -86,6 +88,7 @@ class ReminderService {
 
 
     } catch (err) {
+      console.log(err);
       throw err; // let controller handle response
     }
   }
@@ -122,7 +125,7 @@ class ReminderService {
       const isInteractive = Object.values(REMINDER_TEMPLATE_NAMES).includes(templateName);
 
       if (isInteractive) {
-        const companyName = transaction.metadata?.operatorId?.businessName || transaction.metadata?.operatorId?.companyName || "No Due";
+        const companyName = transaction.metadata?.operatorId?.companyName || "No Due";
         let messagePayload;
 
         // variables expected: [name, amount, dueDate]
@@ -169,6 +172,7 @@ class ReminderService {
 
   /* USER SCHEDULED REMINDER */
   async scheduleByUser({ transactionId, scheduledFor }) {
+    console.log("scheduleByUser");
     const transaction = await Transaction
       .findById(transactionId)
       .populate("customerId");
@@ -239,7 +243,7 @@ class ReminderService {
     const now = new Date();
 
     const reminders = await Reminder.find({
-      status: "pending",
+      status: {$in:['pending','rescheduled']},
       scheduledFor: { $lte: now },
     })
       .populate({
@@ -288,7 +292,7 @@ class ReminderService {
 
 
 
-        const companyName = reminder.metadata?.operatorId?.companyName;
+        const companyName = reminder.transactionId?.metadata?.operatorId?.companyName || "company name";
         let messagePayload;
         const [name, amount, dueDate] = reminder.templateVariables; // Ensure variables stored match this order
         let templateName = reminder?.whatsappTemplate?.name;

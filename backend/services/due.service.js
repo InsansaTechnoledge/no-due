@@ -33,8 +33,7 @@ export const updateTransactionStatus = async ({ from, actionId }) => {
       return;
     }
 
-    // Find the most relevant pending transaction (DUE_ADDED)
-    // We prioritize OVERDUE or PENDING/PARTIAL
+    
     const transaction = await Transaction.findOne({
       customerId: customer._id,
       type: "DUE_ADDED",
@@ -58,8 +57,7 @@ export const updateTransactionStatus = async ({ from, actionId }) => {
           expectedPaymentDate: now, // Set to today
           reminderPausedUntil: new Date(now.getTime() + 24 * 60 * 60 * 1000), // +24 hours
         };
-        // System Actions: Pause all reminders for 24 hours.
-        // Also "Set expected_payment_date = today"
+     
         break;
 
       case "PAID_TODAY": // "Paid today"
@@ -70,7 +68,6 @@ export const updateTransactionStatus = async ({ from, actionId }) => {
           reminderPausedUntil: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // Pause for 7 days significantly or until verified
         };
         // Notify user/account owner to verify payment
-        // TODO: Implement notification
         console.log(`NOTIFY OWNER: Customer ${customer.name} claims to have paid.`);
         try {
           // Re-fetch transaction with operator populated
@@ -80,7 +77,6 @@ export const updateTransactionStatus = async ({ from, actionId }) => {
           if (ownerMobile) {
             const message = `Action Required: Customer ${customer.name} (${customer.mobile}) has marked their due of ₹${transaction.amount} as PAID today. Please verify.`;
             // Assuming sending text message to owner. If owner is not a customer, we might need a different sending mechanism or just use sendTextMessage if the number is valid whatsapp number.
-            // Usually this goes to the business owner.
             await whatsappService.sendTextMessage({ to: ownerMobile, text: message });
             console.log(`Notification sent to owner ${ownerMobile}`);
           }
@@ -111,9 +107,40 @@ export const updateTransactionStatus = async ({ from, actionId }) => {
           commitmentStatus: "STATEMENT_REQUESTED",
           reminderPausedUntil: new Date(now.getTime() + 48 * 60 * 60 * 1000), // +48 hours
         };
-        // Send invoice / statement automatically
-        console.log(`SEND STATEMENT to ${from}`);
-        await whatsappService.sendTextMessage({ to: from, text: "We have received your request for a statement. It will be sent to you shortly." });
+
+        console.log(`SEND STATEMENT to ${from} for Transaction ${transaction._id}`);
+
+        // Fetch specific payments linked to THIS due transaction
+        const linkedPayments = await Transaction.find({
+          linkedDueTransaction: transaction._id,
+          type: "PAYMENT"
+        }).sort({ createdAt: 1 });
+
+        const dueDate = transaction.dueDate ? new Date(transaction.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A";
+        const totalPaid = linkedPayments.reduce((sum, tx) => sum + tx.amount, 0);
+        const remainingForThisDue = transaction.amount - totalPaid;
+
+        let statementText = `*STATEMENT FOR DUE #${transaction._id.toString().slice(-4)}*\n`;
+        statementText += `Due Date: ${dueDate}\n`;
+        statementText += `*Original Amount: ₹${transaction.amount}*\n`;
+        statementText += `--------------------------------\n`;
+
+        if (linkedPayments.length > 0) {
+          statementText += `*Payments Received:*\n`;
+          linkedPayments.forEach(tx => {
+            const date = new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+            // const note = tx.metadata?.note ? ` (${tx.metadata.note})` : ''; // hidding for now
+            statementText += `✅ ${date}: ₹${tx.amount}\n`;
+          });
+          statementText += `--------------------------------\n`;
+          statementText += `Total Paid: ₹${totalPaid}\n`;
+        } else {
+          statementText += `_No payments made yet._\n--------------------------------\n`;
+        }
+
+        statementText += `*Pending Balance: ₹${remainingForThisDue}*`;
+
+        await whatsappService.sendTextMessage({ to: from, text: statementText });
         break;
 
       default:
@@ -128,9 +155,7 @@ export const updateTransactionStatus = async ({ from, actionId }) => {
     await transaction.save();
     console.log(`Transaction ${transaction._id} updated with ${JSON.stringify(updates)}`);
 
-    // Send confirmation or acknowledgment if needed?
-    // original logic didn't specify responding back with text, but usually good practice.
-    // For now we trust the flow.
+   
 
   } catch (error) {
     console.error("Error in updateTransactionStatus:", error);

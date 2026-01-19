@@ -125,6 +125,7 @@ export const SidebarFeatures = [
     icon: "ClipboardClock",
     path: "payment-reminder"
   },
+  
   // {
   //   name:"whatsapp chats",
   //   icon:"FaWhatsapp",

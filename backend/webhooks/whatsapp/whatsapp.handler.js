@@ -2,6 +2,7 @@ import { parseWhatsappMessage } from "./whatsapp.parser.js";
 import { sendMainMenu } from "./whatsapp.template.js";
 import whatsappService from "../../services/whatsapp.service.js";
 import { getCurrentDue, updateTransactionStatus } from "../../services/due.service.js"
+import whatsappAuditService from "../../services/whatsapp.audit.service.js";
 
 export const handleWhatsappEvent = async (payload) => {
   const entry = payload?.entry?.[0];
@@ -9,6 +10,19 @@ export const handleWhatsappEvent = async (payload) => {
 
   const intent = parseWhatsappMessage(entry);
   if (!intent) return;
+
+  const rawMsg = entry?.changes?.[0]?.value?.messages?.[0];
+
+  // Audit Log Inbound
+  await whatsappAuditService.logMessage({
+    mobile: intent.from,
+    direction: "INBOUND",
+    type: intent.type === "LIST" ? "interactive" : "text",
+    text: intent.text || intent.actionId,
+    whatsappMessageId: rawMsg?.id,
+    status: "received",
+    payload: intent
+  });
 
   // Greeting
   if (intent.type === "TEXT" && ["hi", "hello"].includes(intent.text)) {

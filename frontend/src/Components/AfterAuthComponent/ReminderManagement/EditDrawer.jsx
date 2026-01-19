@@ -152,7 +152,7 @@ const EditDrawer = ({ reminder, onClose, onDeleteSuccess, onRescheduleSuccess })
                   </button>
                   <button
                     onClick={handleReschedule}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                     Save Changes
                   </button>
                 </div>
