@@ -105,7 +105,7 @@ export default function ScheduleOrSendReminderModal({
 
     return TEMPLATE_PREVIEWS[template]
       ?.replace("{{customer_first_name}}", selectedUser.name)
-      ?.replace("{{amount}}", selectedTransaction.amount)
+      ?.replace("{{amount}}", selectedTransaction?.remainingDue)
       ?.replace("{{due_date}}", formatDate(selectedTransaction.dueDate));
   }, [template, selectedTransaction, selectedUser]);
 
@@ -223,7 +223,7 @@ export default function ScheduleOrSendReminderModal({
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <span className="text-lg font-bold text-gray-800">₹{tx.amount}</span>
+                            <span className="text-lg font-bold text-gray-800">₹{tx?.remainingDue}</span>
                             {/* You can add more badges here if tx logic requires it */}
                           </div>
                           <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">

@@ -1,10 +1,12 @@
 import axios from "axios";
 import dotenv from 'dotenv';
 import fs from "fs"
+import whatsappAuditService from "./whatsapp.audit.service.js"; // Import Audit Service
+
 if (fs.existsSync('.env.development.local')) {
-    dotenv.config({ path: '.env.development.local' });
+  dotenv.config({ path: '.env.development.local' });
 } else {
-    dotenv.config();
+  dotenv.config();
 };
 
 class WhatsAppService {
@@ -15,16 +17,17 @@ class WhatsAppService {
 
     this.accessToken = process.env.ACCESS_TOKEN;
 
-    this.headers = { headers: {
-          "Authorization": `Bearer ${this.accessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
+    this.headers = {
+      headers: {
+        "Authorization": `Bearer ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    }
 
     if (!this.accessToken) {
-      console.warn(" WHATSAPP ACCESS TOKEN not set");
+      console.warn("WHATSAPP ACCESS TOKEN not set");
     }
-    if(!this.headers){
+    if (!this.headers) {
       console.warn("header is not there");
     }
   }
@@ -71,6 +74,17 @@ class WhatsAppService {
         timeout: 10000,
       });
 
+      // Audit Log
+      await whatsappAuditService.logMessage({
+        mobile: to,
+        direction: "OUTBOUND",
+        type: "template",
+        templateName: templateName,
+        text: templateName,
+        whatsappMessageId: response.data.messages?.[0]?.id,
+        status: "sent"
+      });
+
       return {
         success: true,
         providerResponse: response.data,
@@ -86,10 +100,30 @@ class WhatsAppService {
       );
     }
   }
-  async sendInteractiveMessage({ to, type, body, action }) {
+  async sendInteractiveMessage({ to, type, body, action, footer }) {
     if (!to) throw new Error("Recipient mobile number is required");
     if (!type || !["list", "button"].includes(type)) {
       throw new Error("Invalid interactive message type");
+    }
+
+    // Ensure body is correctly formatted as { text: "content" }
+    let bodyObj;
+    if (typeof body === 'string') {
+      bodyObj = { text: body };
+    } else if (body && body.text && typeof body.text === 'string') {
+      bodyObj = { text: body.text };
+    } else {
+      throw new Error("Invalid body format. Must be a string or object with text property.");
+    }
+
+    const interactivePayload = {
+      type: type,
+      body: bodyObj,
+      action: action,
+    };
+
+    if (footer) {
+      interactivePayload.footer = { text: footer };
     }
 
     const payload = {
@@ -97,43 +131,63 @@ class WhatsAppService {
       to,
       recipient_type: "individual",
       type: "interactive",
-      interactive: {
-        type: type,
-        body: { text: body },
-        action: action,
-      },
+      interactive: interactivePayload,
     };
 
     try {
-     
+      console.log("sending interactive payload:", JSON.stringify(payload, null, 2));
       const response = await axios.post(this.apiUrl, payload, this.headers);
+      console.log(response?.status);
+
+      // Audit Log
+      await whatsappAuditService.logMessage({
+        mobile: to,
+        direction: "OUTBOUND",
+        type: "interactive",
+        text: bodyObj.text, // Log the visible body text
+        whatsappMessageId: response.data.messages?.[0]?.id,
+        status: "sent",
+        payload: interactivePayload
+      });
+
       return { success: true, data: response?.data };
     } catch (error) {
-      console.error("WhatsApp interactive send failed:",  error);
+      console.error("WhatsApp interactive send failed:", error?.response?.data || error.message);
       throw new Error("Failed to send interactive message");
     }
   }
 
-  async sendTextMessage({ to, text }){
-   
-      const payload = {
-        messaging_product: "whatsapp",
-        to,
-        recipient_type: "individual",
-        type: "text",
-        text:{
-          body:text
-        }
-      };
-      try {
-       
-        const response = await axios.post(this.apiUrl, payload, this.headers);
-        return {success: true, data: response?.data};
-        
-      } catch (error) {
-        console.log(error.response);
-        throw new Error("Failed to send Text message");
+  async sendTextMessage({ to, text }) {
+
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      recipient_type: "individual",
+      type: "text",
+      text: {
+        body: text
       }
+    };
+    try {
+
+      const response = await axios.post(this.apiUrl, payload, this.headers);
+
+      // Audit Log
+      await whatsappAuditService.logMessage({
+        mobile: to,
+        direction: "OUTBOUND",
+        type: "text",
+        text: text,
+        whatsappMessageId: response.data.messages?.[0]?.id,
+        status: "sent"
+      });
+
+      return { success: true, data: response?.data };
+
+    } catch (error) {
+      console.log(error.response);
+      throw new Error("Failed to send Text message");
+    }
   }
 
 }
