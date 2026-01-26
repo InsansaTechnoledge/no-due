@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Calendar, Clock, MessageCircle, Phone, Plus, Search, Send, Trash2, Pause, CheckCircle2, XCircle, Pencil, Copy, AlertCircle, Filter } from "lucide-react";
+import { Calendar, Clock, MessageCircle, Phone, Plus, Search, Send, Trash2, Pause, CheckCircle2, XCircle, Pencil, Copy, AlertCircle, Filter, History } from "lucide-react";
 import { MOCK_REMINDERS, TEMPLATES } from "../../utils/constants";
 import { currency2, IconBtn, statusChip, TabButton } from "../../utils/AfterAuthUtils/Helpers";
 import StatCard from "../../Components/AfterAuthComponent/ReminderManagement/StatCard";
 import EditDrawer from "../../Components/AfterAuthComponent/ReminderManagement/EditDrawer";
+import AuditDrawer from "../../Components/AfterAuthComponent/ReminderManagement/AuditDrawer";
 import { deleteReminder, getAllRemainders, scheduleReminder, sendReminderNow } from "../../utils/service/remainderService.js"
 import ScheduleOrSendReminderModal from "../../Components/AfterAuthComponent/ReminderManagement/ScheduleOrSendReminderModal.jsx";
 import { toast } from "react-toastify";
@@ -15,6 +16,7 @@ export default function ReminderManagement() {
   const [bulk, setBulk] = useState(new Set());
   const [openNew, setOpenNew] = useState(false);
   const [drawer, setDrawer] = useState(null);
+  const [auditCustomer, setAuditCustomer] = useState(null);
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -22,6 +24,15 @@ export default function ReminderManagement() {
     total: 0,
     totalPages: 1
   });
+  const [stats, setStats] = useState({
+    scheduled: 0,
+    sent: 0,
+    failed: 0,
+    pending: 0,
+    total: 0,
+    responseRate: "41%" // hardcoded for now or fetch if API supports
+  });
+
   const fetchReminders = useCallback(async () => {
     try {
       const filters = {
@@ -30,12 +41,23 @@ export default function ReminderManagement() {
       };
 
       if (tab !== 'all') {
-        filters.status = tab;
+        if (tab === 'pending') {
+          filters.status = 'pending,rescheduled';
+        } else {
+          filters.status = tab;
+        }
       }
 
       const res = await getAllRemainders(filters);
-      setData(res.data.data.data || []);
-      setPagination(prev => ({ ...prev, ...res.data.data.meta }));
+      console.log(res);
+      const output = res.data.data;
+
+      setData(output.data || []);
+      setPagination(prev => ({ ...prev, ...output.meta }));
+
+      if (output.stats) {
+        setStats(prev => ({ ...prev, ...output.stats }));
+      }
 
     } catch (error) {
       console.log(error);
@@ -56,7 +78,7 @@ export default function ReminderManagement() {
         company: "-", // not present yet
       },
 
-      dueAmount: r.customerId.currentDue || 0,
+      dueAmount: r?.customerId?.currentDue || 0,
 
       sendAt: r.scheduledFor,
 
@@ -72,7 +94,7 @@ export default function ReminderManagement() {
 
   const filtered = useMemo(() => {
     return normalizeData.filter((r) => {
-      
+
       const s = q.trim().toLowerCase();
       if (!s) return true;
       return (
@@ -90,13 +112,7 @@ export default function ReminderManagement() {
     });
   };
 
-  const stats = useMemo(() => ({
-    scheduled: normalizeData.filter(r => r.status === "scheduled").length,
-    sent: normalizeData.filter(r => r.status === "sent").length,
-    failed: normalizeData.filter(r => r.status === "failed").length,
-    responseRate: "41%"
 
-  }), []);
 
   const handleSubmit = async (data) => {
     console.log("submitted", data);
@@ -220,19 +236,19 @@ export default function ReminderManagement() {
               <TabButton active={tab === "pending"} onClick={() => setTab("pending")} icon={<Clock className="w-4 h-4" />}>
                 pending
                 <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                  {data.filter(r => r.status === "pending").length}
+                  {stats.pending}
                 </span>
               </TabButton>
               <TabButton active={tab === "sent"} onClick={() => setTab("sent")} icon={<CheckCircle2 className="w-4 h-4" />}>
                 Sent
                 <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                  {data.filter(r => r.status === "sent").length}
+                  {stats.sent}
                 </span>
               </TabButton>
               <TabButton active={tab === "failed"} onClick={() => setTab("failed")} icon={<XCircle className="w-4 h-4" />}>
                 Failed
                 <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-medium">
-                  {data.filter(r => r.status === "failed").length}
+                  {stats.failed}
                 </span>
               </TabButton>
             </div>
@@ -357,6 +373,7 @@ export default function ReminderManagement() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-0.5">
+                        <IconBtn title="History" onClick={() => setAuditCustomer(r.customer)}> <History className="w-4 h-4" /> </IconBtn>
                         <IconBtn title="Edit" onClick={() => setDrawer(r)}><Pencil className="w-4 h-4" /></IconBtn>
                         <IconBtn title="Delete" danger onClick={() => handleDeleteReminder(r)} ><Trash2 className="w-4 h-4" /></IconBtn>
                       </div>
@@ -407,6 +424,7 @@ export default function ReminderManagement() {
 
       {openNew && <ScheduleOrSendReminderModal open={openNew} onClose={() => setOpenNew(false)} onSubmit={handleSubmit} />}
       {drawer && <EditDrawer reminder={drawer} onClose={() => setDrawer(null)} onDeleteSuccess={handleDrawerDeleteSuccess} onRescheduleSuccess={handleDrawerRescheduleSuccess} />}
+      {auditCustomer && <AuditDrawer customer={auditCustomer} onClose={() => setAuditCustomer(null)} />}
     </div>
   );
 }

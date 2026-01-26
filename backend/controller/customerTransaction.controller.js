@@ -80,6 +80,7 @@ export async function addDue(req, res) {
 
   
 
+    
     const reminders= await reminderService.createForDue({ transactionId: tx[0]._id });
 
     customer.currentDue += amount;

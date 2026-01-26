@@ -8,12 +8,11 @@ if (fs.existsSync('.env.development.local')) {
 };
 
 import connectDB from './database/databaseConfig.js';
-import { initSocket } from './socket/index.js';
+// import { initSocket } from './socket/index.js';
 
 import jobForRemainder from "./utils/cronJob/job.js";
 
 const PORT = process.env.PORT || 8383;
-const verifyToken = process.env.VERIFY_TOKEN;
 
 
 const startServer = async () => {
@@ -24,7 +23,7 @@ const startServer = async () => {
         const { default: app } = await import('./config/express.config.js');
 
         const server = http.createServer(app);
-        initSocket(server); //confirm await will work here or not?
+        // initSocket(server); //confirm await will work here or not?
 
         await jobForRemainder();
 

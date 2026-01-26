@@ -1,76 +1,86 @@
-import Customer from "../model/customer.model.js";
-import WhatsappConversation from "../model/whatsappConversation.js";
-import WhatsappMessage from "../model/whatsappMessage.modal.js";
+import mongoose, { Schema, Types } from "mongoose";
 
 
 
-class WhatsappAuditService {
+const whatsappMessageSchema = new Schema({
+    // WhatsApp provided message id (wamid.xxx)
+    whatsappMessageId: {
+      type: String,
+      index: true,
+      unique: true,
+      sparse: true,
+    },
 
+  // The ID of the message this message is responding to (context.id)
+  responseToMessageId: {
+    type: String,
+    index: true,
+    sparse: true, // it only index this field if it actually exists
+  },
 
-    async logMessage({ mobile, direction, type, text, templateName, variables, whatsappMessageId, status, customerId, payload, responseToMessageId }) {
+  customerId: {
+    type: String, // Changed from ObjectId to String for webhook ingestion
+    // ref: "Customer",
+    required: true,
+    index: true,
+  },
 
-        try {
-            console.log(`[Audit] Saving message: ${mobile} ${direction} ${type} Status: ${status}`);
+    mobile: {
+      type: String,
+      required: true,
+      index: true,
+    },
 
-            if (!mobile) return;
+    direction: {
+      type: String,
+      enum: ["INBOUND", "OUTBOUND"],
+      required: true,
+    },
 
-            // Use the text passed from the caller
-            let messageText = text || `Type: ${type}`;
+    type: {
+      type: String,
+      enum: ["text", "image", "template", "button"],
+      default: "text",
+    },
 
-            // 1. Find or Create Conversation
-            let conversation = await WhatsappConversation.findOne({ mobile });
+    text: {
+      type: String,
+      default: "",
+    },
+    context:{
+      type: Object,
+    },
+    templateName: {
+      type: String,
+      default: null,
+    },
 
-            let customer = await Customer.findOne({ mobile });
+    status: {
+      type: String,
+      enum: ["queued", "sent", "delivered", "read", "failed"],
+      default: "queued",
+      index: true,
+    },
 
-            if (!conversation) {
-                const linkedCustomerId = customer?._id || customerId;
+    error: {
+      type: String,
+      default: null,
+    },
 
-                if (!linkedCustomerId) {
-                    console.warn(`[Audit] No customer found for mobile ${mobile}, cannot create conversation.`);
-                    //later have to decise pass or return here
-                }
+    metadata: {
+      type: Object,
+      default: {},
+    },
 
-                conversation = await WhatsappConversation.create({
-                    customerId: linkedCustomerId,
-                    mobile: mobile,
-                    lastMessage: messageText || type,
-                    lastMessageAt: new Date(),
-                    unreadCount: direction === "INBOUND" ? 1 : 0,
-                });
-            } else {
-                // Update conversation
-                conversation.lastMessage = messageText || type;
-                conversation.lastMessageAt = new Date();
-                if (direction === "INBOUND") {
-                    conversation.unreadCount += 1;
-                } else {
-                    // conversation.unreadCount = 0; // Optional: reset on reply? usually yes, but maybe explicit read is better. Keeping concise.
-                }
-                await conversation.save();
-            }
+    timestamp: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+  },
+  { timestamps: true }
+);
 
-            // 2. Create Message Log
-            await WhatsappMessage.create({
-                mobile,
-                direction,
-                type,
-                text: messageText,
-                templateName,
-                whatsappMessageId,
-                status: status || (direction === "OUTBOUND" ? "sent" : "delivered"),
-                timestamp: new Date(),
-                customerId: conversation.customerId ? conversation.customerId.toString() : (customerId || "unknown"),
-                metadata: payload || {},
-                responseToMessageId
-            });
+const whatsappMessage =  mongoose.model("WhatsappMessage", whatsappMessageSchema);
 
-
-            console.log(`[Audit] Logged ${direction} message for ${mobile}`);
-
-        } catch (error) {
-            console.error("[Audit] Failed to log message:", error);
-        }
-    }
-}
-
-export default new WhatsappAuditService();
+export default whatsappMessage;

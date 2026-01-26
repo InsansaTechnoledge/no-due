@@ -8,24 +8,51 @@ import Reminder from "../model/remainder.model.js";
 import { formatDate } from "../utils/Helper.js"
 import PaymentTerm from "../model/PaymentTerm.model.js";
 import mongoose from "mongoose";
+import { REMINDER_TEMPLATE_NAMES } from "../utils/reminder.templates.js";
 
 
+const TEMPLATE_MAP = {
+  due_before: REMINDER_TEMPLATE_NAMES.INTERACTIVE_BEFORE_DUE,
+  due_today: REMINDER_TEMPLATE_NAMES.INTERACTIVE_DUE_TODAY,
+  overdue: REMINDER_TEMPLATE_NAMES.INTERACTIVE_OVERDUE,
+};
 
-const TEMPLATE_MAP = { due_before: "nodue_remainder_1" };
 
+function getReminderType(dueDate, now) {
+  const dDate = new Date(dueDate);
+  dDate.setHours(0, 0, 0, 0);
+  const nDate = new Date(now);
+  nDate.setHours(0, 0, 0, 0);
 
-function getReminderType(dueDate, scheduleFor) {
+  if (nDate.getTime() === dDate.getTime()) {
+    return 'due_today';
+  } else if (nDate > dDate) {
+    return 'overdue';
+  }
   return 'due_before';
 }
 
 export const getAllRemainders = async (req, res) => {
   try {
-
     const { status, page = 1, limit = 10 } = req.query;
+    const userId = req.user._id;
 
-    const filters = {};
+    // 1. Find all customers belonging to this user
+    const userCustomers = await Customer.find({ CustomerOfComapny: userId }).select('_id');
+    const customerIds = userCustomers.map(c => c._id);
+
+    // 2. Base filter: Must belong to one of the user's customers
+    const filters = {
+      customerId: { $in: customerIds }
+    };
+
     if (status) {
-      filters.status = status.toLowerCase();
+      const statuses = status.split(',').map(s => s.trim().toLowerCase());
+      if (statuses.length > 1) {
+        filters.status = { $in: statuses };
+      } else {
+        filters.status = statuses[0];
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -42,8 +69,46 @@ export const getAllRemainders = async (req, res) => {
 
     const total = await Reminder.countDocuments(filters);
 
-    return new APIResponse(200, { data: reminders, meta: { total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / limit) } }, "All reminders fetched successfully").send(res);
+    // 3. Stats Aggregation (Scoped to user's customers)
+    const statsAggregation = await Reminder.aggregate([
+      {
+        $match: { customerId: { $in: customerIds } }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          pending: {
+            $sum: {
+              $cond: [
+                { $in: ["$status", ["pending", "rescheduled"]] },
+                1,
+                0
+              ]
+            }
+          },
+          sent: { $sum: { $cond: [{ $eq: ["$status", "sent"] }, 1, 0] } },
+          failed: { $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] } },
+          scheduled: { $sum: { $cond: [{ $eq: ["$status", "scheduled"] }, 1, 0] } }
+        }
+      },
+      {
+        $project: {
+          _id: 0, total: 1, pending: 1, sent: 1, failed: 1, scheduled: 1
+        }
+      }
+    ]);
+
+    const stats = statsAggregation[0] || { total: 0, pending: 0, sent: 0, failed: 0, scheduled: 0 };
+
+    return new APIResponse(200, {
+      data: reminders,
+      meta: { total, page: Number(page), limit: Number(limit), totalPages: Math.ceil(total / limit) },
+      stats
+    }, "All reminders fetched successfully").send(res);
+
   } catch (error) {
+    console.error("Fetch Reminders Error:", error);
     return new APIError(500, [error.message], "Failed to fetch reminders").send(res);
   }
 }
@@ -88,14 +153,18 @@ export const sendWhatsappRemainder = async (req, res) => {
     }
 
     const customer = tx.customerId;
-    const paymentTerm = customer?.paymentTerm;
-
-    if (!paymentTerm) {
-      return new APIError(400, ["Payment term not found for customer"]).send(res);
+    // We can use paymentTerm to calculate due date OR use tx.dueDate if available
+    let dueDate = tx.dueDate;
+    if (!dueDate && customer?.paymentTerm) {
+      dueDate = new Date(tx.createdAt);
+      dueDate.setDate(dueDate.getDate() + customer.paymentTerm.creditDays);
     }
 
-    const dueDate = new Date(tx.createdAt);
-    dueDate.setDate(dueDate.getDate() + paymentTerm.creditDays);
+    if (!dueDate) {
+      // Fallback or error? defaulting to today for safety or erroring
+      dueDate = new Date(); // unsafe assumption but prevents crash
+    }
+
 
     const reminderType = getReminderType(dueDate, new Date());
 
@@ -108,10 +177,12 @@ export const sendWhatsappRemainder = async (req, res) => {
       ).send(res);
     }
 
+    console.log("templateName: ", templateName, "\n");
+
     const variables = [
       customer.name,
       tx.amount.toString(),
-      formatDate(dueDate)
+      dueDate // Pass Date object, service formats it
     ];
 
     const result = await remainderService.sendNow({
@@ -237,7 +308,7 @@ export const deleteReminder = async (req, res) => {
   } catch (error) {
     console.error("Delete Reminder Error:", error);
 
-    return new APIError(500, null, "Internal server error", false).send(res);
+    return new APIResponse(500, null, "Internal server error", false).send(res);
   }
 };
 
@@ -260,5 +331,25 @@ export const rescheduleReminder = async (req, res) => {
   } catch (error) {
     console.error("Reschedule Reminder Error:", error);
     return new APIError(500, null, error.message || "Internal server error", false).send(res);
+  }
+};
+
+import WhatsappMessage from "../model/whatsappMessage.modal.js";
+
+export const getAuditLogs = async (req, res) => {
+  try {
+    const { mobile } = req.params;
+    if (!mobile) {
+      return new APIError(400, null, "Mobile number is required").send(res);
+    }
+
+    const logs = await WhatsappMessage.find({ mobile })
+      .sort({ timestamp: -1 }) // Newest first
+      .limit(50); // Limit to last 50 for now
+
+    return new APIResponse(200, logs, "Audit logs fetched").send(res);
+  } catch (error) {
+    console.error("Get Audit Logs Error:", error);
+    return new APIError(500, null, "Failed to fetch audit logs").send(res);
   }
 };

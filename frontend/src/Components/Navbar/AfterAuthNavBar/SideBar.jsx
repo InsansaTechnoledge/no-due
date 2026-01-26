@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { SideBarCTC, SidebarFeatures } from "../../../utils/constants";
 import NotificationPop from "../../../utils/AfterAuthUtils/SideBarUtils/NotificationPop";
 import MobileOpenButton from "../../../utils/AfterAuthUtils/SideBarUtils/MobileOpenButton";
-import { BadgeQuestionMark, BookOpen, Calculator, ChevronDown, CircleUserRound, ClipboardClock, Clock, Contact, LayoutDashboard,  PanelLeft,  Upload, X } from "lucide-react";
+import { BadgeQuestionMark, BookOpen, Calculator, ChevronDown, CircleUserRound, ClipboardClock, Clock, Contact, LayoutDashboard,  Logs,  PanelLeft,  Upload, X } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { GrTransaction } from "react-icons/gr";
 
@@ -67,6 +67,11 @@ const SideBar = ({ ActivePage, handleCollapse, isCollapsed}) => {
         return (
           <GrTransaction className={`w-4 h-4 ${isActive === 0 ? 'text-green-600' : 'text-gray-600'}`} />
         )
+      case 'logs':
+         return (
+          <Logs className={`w-4 h-4 ${isActive === 0 ? 'text-green-600' : 'text-gray-600'}`} />
+        )
+        
     }
   }
 
