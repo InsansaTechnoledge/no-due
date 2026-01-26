@@ -9,14 +9,15 @@ export const parseWhatsappMessage = (entry) => {
 
     if (interactive.type === "list_reply") {
       actionId = interactive.list_reply.id;
-    } else if (interactive.type === "button_reply") {
-      actionId = interactive.button_reply.id;
+      title = interactive.list_reply.title;
     }
 
     return {
       type: "LIST",
       actionId,
-      from: message.from
+      text: title || actionId,
+      from: message.from,
+      context: message.context
     };
   }
 

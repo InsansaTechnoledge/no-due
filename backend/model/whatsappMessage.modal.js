@@ -11,12 +11,19 @@ const whatsappMessageSchema = new Schema({
       sparse: true,
     },
 
-    customerId: {
-      type: String, // Changed from ObjectId to String for webhook ingestion
-      // ref: "Customer",
-      required: true,
-      index: true,
-    },
+  // The ID of the message this message is responding to (context.id)
+  responseToMessageId: {
+    type: String,
+    index: true,
+    sparse: true, // it only index this field if it actually exists
+  },
+
+  customerId: {
+    type: String, // Changed from ObjectId to String for webhook ingestion
+    // ref: "Customer",
+    required: true,
+    index: true,
+  },
 
     mobile: {
       type: String,

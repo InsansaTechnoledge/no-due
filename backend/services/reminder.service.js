@@ -202,10 +202,17 @@ class ReminderService {
     const reminders = await Reminder.find({
       status: "pending",
       scheduledFor: { $lte: now },
-    }).populate({
-      path: "transactionId",
-      populate: { path: "customerId" },
-    });
+    })
+      .populate({
+        path: "transactionId",
+        populate: [
+          { path: "customerId" },
+          { path: "metadata.operatorId", select: "businessName companyName" }
+        ],
+      });
+
+
+    // console.log("will process this reminder", reminders);
 
 
 
@@ -213,6 +220,7 @@ class ReminderService {
       // console.log(reminder);
       try {
         const tx = reminder.transactionId;
+        // console.log("tx", tx);
 
         if (!tx || tx.paymentStatus === "PAID") {
           reminder.status = "cancelled";

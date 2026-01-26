@@ -74,7 +74,7 @@ const handleContinue = () => {
                         <select
                           value={row[key] || ""}
                           onChange={(e) => handleCellChange(rowIndex, key, e.target.value)}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-[90px] bg-red-400 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                         >
                           <option value="">Select</option>
                           {dropdownFields[key.toLowerCase()].map((opt, idx) => (
@@ -86,7 +86,7 @@ const handleContinue = () => {
                           type="text"
                           value={row[key] || ""}
                           onChange={(e) => handleCellChange(rowIndex, key, e.target.value)}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-[90px] border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       )}
 

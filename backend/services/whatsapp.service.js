@@ -1,6 +1,9 @@
 import axios from "axios";
 import dotenv from 'dotenv';
 import fs from "fs"
+import whatsappAuditService from "./whatsapp.audit.service.js";
+import WhatsAppSession from "../model/whatsappSession.model.js";
+
 if (fs.existsSync('.env.development.local')) {
     dotenv.config({ path: '.env.development.local' });
 } else {
@@ -107,6 +110,20 @@ class WhatsAppService {
     try {
      
       const response = await axios.post(this.apiUrl, payload, this.headers);
+      console.log(response?.status);
+      console.log(response);
+
+      // Audit Log
+      await whatsappAuditService.logMessage({
+        mobile: to,
+        direction: "OUTBOUND",
+        type: "interactive",
+        text: bodyObj.text, // Log the visible body text
+        whatsappMessageId: response.data.messages?.[0]?.id,
+        status: "sent",
+        payload: interactivePayload
+      });
+
       return { success: true, data: response?.data };
     } catch (error) {
       console.error("WhatsApp interactive send failed:",  error);
