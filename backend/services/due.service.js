@@ -1,0 +1,163 @@
+import Customer from "../model/customer.model.js";
+import Transaction from "../model/transaction.model.js";
+import whatsappService from "./whatsapp.service.js"; // Importing service for sending statement
+
+export const getCurrentDue = async ({ from }) => {
+  console.log(from);
+  try {
+    // const { Customer } = await import("../model/customer.model.js");
+
+    const customer = await Customer.findOne({ mobile: from });
+
+    if (!customer) {
+      return { text: "Customer not found.", success: false };
+    }
+
+    return {
+      text: `Your current due is ₹${customer.currentDue}`,
+      success: true
+    };
+  } catch (error) {
+    console.error("getCurrentDue error:", error);
+    return { text: "Something went wrong.", success: false };
+  }
+}
+
+export const updateTransactionStatus = async ({ from, actionId }) => {
+  console.log(`Updating Transaction Status for ${from}, Action: ${actionId}`);
+
+  try {
+    const customer = await Customer.findOne({ mobile: from });
+    if (!customer) {
+      console.error(`Customer not found for mobile: ${from}`);
+      return;
+    }
+
+    
+    const transaction = await Transaction.findOne({
+      customerId: customer._id,
+      type: "DUE_ADDED",
+      paymentStatus: { $in: ["PENDING", "PARTIAL", "OVERDUE"] },
+    }).sort({ dueDate: 1 }); // Oldest due first? or recent? Usually we want to address the oldest due.
+
+    if (!transaction) {
+      console.log(`No pending due found for customer ${customer._id}`);
+      // Maybe reply "You have no pending dues"?
+      return;
+    }
+
+    const now = new Date();
+    let updates = {};
+
+    switch (actionId) {
+      case "PAY_TODAY": // "I will pay today"
+      case "WILL_PAY_TODAY": // "I will pay today"
+        updates = {
+          commitmentStatus: "COMMITTED_TODAY",
+          expectedPaymentDate: now, // Set to today
+          reminderPausedUntil: new Date(now.getTime() + 24 * 60 * 60 * 1000), // +24 hours
+        };
+     
+        break;
+
+      case "PAID_TODAY": // "Paid today"
+        updates = {
+          commitmentStatus: "PAID_AWAITING_CONFIRMATION",
+          // Pause all reminders immediately (Done via reminderPausedUntil indefinitely or check commitmentStatus)
+          // Let's set a long pause or handle it in reminder service to skip if status is PAID_AWAITING_CONFIRMATION
+          reminderPausedUntil: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // Pause for 7 days significantly or until verified
+        };
+        // Notify user/account owner to verify payment
+        console.log(`NOTIFY OWNER: Customer ${customer.name} claims to have paid.`);
+        try {
+          // Re-fetch transaction with operator populated
+          const detailedTx = await Transaction.findById(transaction._id).populate("metadata.operatorId");
+          const ownerMobile = detailedTx?.metadata?.operatorId?.phoneNumber;
+
+          if (ownerMobile) {
+            const message = `Action Required: Customer ${customer.name} (${customer.mobile}) has marked their due of ₹${transaction.amount} as PAID today. Please verify.`;
+            // Assuming sending text message to owner. If owner is not a customer, we might need a different sending mechanism or just use sendTextMessage if the number is valid whatsapp number.
+            await whatsappService.sendTextMessage({ to: ownerMobile, text: message });
+            console.log(`Notification sent to owner ${ownerMobile}`);
+          }
+        } catch (notifyErr) {
+          console.error("Failed to notify owner:", notifyErr);
+        }
+        break;
+
+      case "PAY_WEEK": // "I will pay within a week"
+        const nextWeek = new Date(now);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        updates = {
+          commitmentStatus: "COMMITTED_THIS_WEEK",
+          expectedPaymentDate: nextWeek,
+          reminderPausedUntil: nextWeek,
+        };
+        break;
+
+      case "PAY_SOON": // "I will pay soon"
+        updates = {
+          commitmentStatus: "PAYING_SOON",
+          reminderPausedUntil: new Date(now.getTime() + 72 * 60 * 60 * 1000), // +72 hours
+        };
+        break;
+
+      case "NEED_STATEMENT": // "Need statement"
+        updates = {
+          commitmentStatus: "STATEMENT_REQUESTED",
+          reminderPausedUntil: new Date(now.getTime() + 48 * 60 * 60 * 1000), // +48 hours
+        };
+
+        console.log(`SEND STATEMENT to ${from} for Transaction ${transaction._id}`);
+
+        // Fetch specific payments linked to THIS due transaction
+        const linkedPayments = await Transaction.find({
+          linkedDueTransaction: transaction._id,
+          type: "PAYMENT"
+        }).sort({ createdAt: 1 });
+
+        const dueDate = transaction.dueDate ? new Date(transaction.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "N/A";
+        const totalPaid = linkedPayments.reduce((sum, tx) => sum + tx.amount, 0);
+        const remainingForThisDue = transaction.amount - totalPaid;
+
+        let statementText = `*STATEMENT FOR DUE #${transaction._id.toString().slice(-4)}*\n`;
+        statementText += `Due Date: ${dueDate}\n`;
+        statementText += `*Original Amount: ₹${transaction.amount}*\n`;
+        statementText += `--------------------------------\n`;
+
+        if (linkedPayments.length > 0) {
+          statementText += `*Payments Received:*\n`;
+          linkedPayments.forEach(tx => {
+            const date = new Date(tx.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+            // const note = tx.metadata?.note ? ` (${tx.metadata.note})` : ''; // hidding for now
+            statementText += `✅ ${date}: ₹${tx.amount}\n`;
+          });
+          statementText += `--------------------------------\n`;
+          statementText += `Total Paid: ₹${totalPaid}\n`;
+        } else {
+          statementText += `_No payments made yet._\n--------------------------------\n`;
+        }
+
+        statementText += `*Pending Balance: ₹${remainingForThisDue}*`;
+
+        await whatsappService.sendTextMessage({ to: from, text: statementText });
+        break;
+
+      default:
+        console.warn(`Unhandled Action ID in updateTransactionStatus: ${actionId}`);
+        return;
+    }
+
+    // Apply updates
+    Object.assign(transaction, updates);
+    transaction.lastCustomerActionAt = now;
+
+    await transaction.save();
+    console.log(`Transaction ${transaction._id} updated with ${JSON.stringify(updates)}`);
+
+   
+
+  } catch (error) {
+    console.error("Error in updateTransactionStatus:", error);
+  }
+};

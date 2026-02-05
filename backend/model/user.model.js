@@ -1,7 +1,7 @@
-import { Schema, Types } from 'mongoose';
 import validator from 'validator';
-import { connection } from '../database/databaseConfig.js';
 import bcrypt from 'bcryptjs';
+import mongoose, { Schema, Types } from "mongoose";
+
 
 const addressSchema = new Schema({
     street: {
@@ -32,36 +32,56 @@ const addressSchema = new Schema({
 },
     { _id: false });
 
-const userSchema = new Schema({
-    businessName: {
+const whatsappSchema = new Schema({
+
+    provider: {
         type: String,
-        required: true,
-        minlength: [3, "Name must be at least 3 characters long"],
-        maxlength: [70, "Name can be at most 70 characters long"],
-        trim: true,
+        default: "meta"
     },
-      fname: {
-    type: String,
-    trim: true,
-    minLength: [2, 'enter a valid first name'],
-    validate: {
-      validator: function (v) {
-        return /^[a-zA-Z]+$/.test(v);
-      },
-      message: 'First name should contain only alphabets',
+    status: {
+        type: String,
+        enum: ['not_connected', 'connected', 'pending'],
+        default: 'not_connected'
+    },
+    setupStatus: {
+        type: String,
+        enum: ['PENDING', 'COMPLETED', 'FAILED'],
+    },
+    wabaId: String,
+    phoneNumberId: String,
+    accessToken: String,
+    businessProfileId: String, // Meta Business Portfolio ID
+    sharedWabaId: String, // If using On-Behalf-Of flow
+    reminderTemplates: {
+        beforeDue: { type: String, default: '' },
+        dueToday: { type: String, default: '' },
+        overdue: { type: String, default: '' }
     }
-  },
-  lname: {
-    type: String,
-    trim: true,
-    minLength: [2, 'enter a valid last name'],
-    validate: {
-      validator: function (v) {
-        return /^[a-zA-Z]+$/.test(v);
-      },
-      message: 'Last name should contain only alphabets',
-    }
-  },
+}, { _id: false });
+
+const userSchema = new Schema({
+    fname: {
+        type: String,
+        trim: true,
+        minLength: [2, 'enter a valid first name'],
+        validate: {
+            validator: function (v) {
+                return /^[a-zA-Z]+$/.test(v);
+            },
+            message: 'First name should contain only alphabets',
+        }
+    },
+    lname: {
+        type: String,
+        trim: true,
+        minLength: [2, 'enter a valid last name'],
+        validate: {
+            validator: function (v) {
+                return /^[a-zA-Z]+$/.test(v);
+            },
+            message: 'Last name should contain only alphabets',
+        }
+    },
     email: {
         type: String,
         required: [true, "Email is required"],
@@ -153,6 +173,8 @@ const userSchema = new Schema({
         type: Types.ObjectId,
         ref: 'SubscriptionPlan',
     },
+    whatsapp: whatsappSchema,
+
 }, { timestamps: true });
 
 userSchema.pre('save', async function () {
@@ -160,7 +182,7 @@ userSchema.pre('save', async function () {
     try {
         const salt = bcrypt.genSaltSync(10);
         this.password = bcrypt.hashSync(this.password, salt);
-        return ;
+        return;
     } catch (err) {
         return next(err);
     }
@@ -170,6 +192,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-const User = connection.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
 
 export default User;

@@ -1,29 +1,42 @@
 import fs from 'fs';
 import dotenv from 'dotenv';
-import connectDB from './database/databaseConfig.js';
-
+import http from "http";
 if (fs.existsSync('.env.development.local')) {
     dotenv.config({ path: '.env.development.local' });
 } else {
     dotenv.config();
 };
 
-console.log(`Env is loaded in ${process.env.NODE_ENV} mode.`);
+import connectDB from './database/databaseConfig.js';
+// import { initSocket } from './socket/index.js';
+
+import jobForRemainder from "./utils/cronJob/job.js";
+import { corsMiddleware } from './config/corsConfig.js';
 
 const PORT = process.env.PORT || 8383;
 
-const startServer = async () => {
 
+const startServer = async () => {
+    
     try {
         await connectDB();
+        await corsMiddleware();
+        
         const { default: app } = await import('./config/express.config.js');
 
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode.`);
+        const server = http.createServer(app);
+        // initSocket(server); //confirm await will work here or not?
+
+        await jobForRemainder();
+
+        app.get('/status', (req, res) => {
+            res.send('API is running...');
+
         });
 
-        app.get('/', (req, res) => {
-            res.send('API is running...');
+
+        server.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT} in ${process.env.NODE_ENV} mode.`);
         });
 
     } catch (error) {

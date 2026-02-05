@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import { createCustomers } from "../../utils/service/customerService";
 
-const CustomerCreationPage = () => {
+const CustomerCreationPage = ({ paymentTerms }) => {
+
 
   const formConfig = [
     {
@@ -29,6 +30,7 @@ const CustomerCreationPage = () => {
       name: "currentDue",
       label: "Current Due Amount",
       type: "number",
+      disabled: true,
       placeholder: "₹ 0.00",
     },
     {
@@ -42,6 +44,15 @@ const CustomerCreationPage = () => {
       ],
       required: true,
     },
+    {
+      name: "paymentTerm", label: "Payment Term", type: "select", options: [
+        { label: "Select payment term", value: "" },
+        ...paymentTerms.map(pt => ({ label: `${pt.name} - ${pt.creditDays} days`, value: pt._id }))
+
+      ], 
+      placeholder: "Enter payment terms",
+      required: true,
+    }
   ];
 
   const initialFormData = formConfig.reduce((acc, field) => {
@@ -54,18 +65,26 @@ const CustomerCreationPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if(name==='mobile'){
+      let mobile = value.replace('/\D/g', "").slice(0,10); // only allowing 10 digit number
+      
+      setFormData((prev)=>({...prev, [name]:mobile}));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]:value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("formData",formData);
 
     try {
       setLoading(true);
 
       await createCustomers({
         ...formData,
-        currentDue: Number(formData.currentDue),
+        currentDue: Number(formData.currentDue) || 0,
       });
 
       console.log("Submitting:", formData);
@@ -74,7 +93,7 @@ const CustomerCreationPage = () => {
       setFormData(initialFormData); // reset form
     } catch (error) {
       console.log(error);
-      toast.error(error?.response?.data?.message ||  error?.message || "Failed to create customer");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to create customer");
     } finally {
       setLoading(false);
     }
@@ -122,13 +141,37 @@ const CustomerCreationPage = () => {
                       </option>
                     ))}
                   </select>
-                ) : (
+                ): field.name==='mobile'?(
+                  <div className="flex">
+                     <span
+                      className=" border shadow-accertinity inline px-4 py-3 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-gray-300 
+                         focus:border-gray-300 focus:bg-gray-100 border-transparent "
+                    >
+                      +91
+                    </span>
+                      <input
+                        type="tel"
+                        name="mobile"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        placeholder={field.placeholder}
+                        inputMode="numeric"
+                        className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-gray-300 
+                         focus:border-gray-300 focus:bg-gray-100 border-transparent 
+                         transition-all duration-200 outline-none"
+                      />
+
+                  </div>
+                ): (
                   <input
                     type={field.type}
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleChange}
                     placeholder={field.placeholder}
+                    disabled={field.name==='currentDue'}
                     className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl 
                          focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 
                          focus:border-gray-300 focus:bg-gray-100 border-transparent 

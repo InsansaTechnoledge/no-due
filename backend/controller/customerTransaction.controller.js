@@ -2,179 +2,207 @@ import Customer from "../model/customer.model.js";
 import Transaction from "../model/transaction.model.js";
 import { APIResponse } from "../utils/ResponseAndError/ApiResponse.utils.js";
 import { APIError } from "../utils/ResponseAndError/ApiError.utils.js";
+import Reminder from "../model/remainder.model.js";
+import reminderService from "../services/reminder.service.js";
+import mongoose from "mongoose";
 
-function calculateCustomerStatus(currentDue, lastDueDate) {
-    if (currentDue === 0) return "Paid";
+async function recalculateDue(dueTransactionId) {
+  const payments = await Transaction.find({
+    linkedDueTransaction: dueTransactionId,
+    type: "PAYMENT"
+  });
 
-    const now = new Date();
-    const diffDays = (now - new Date(lastDueDate)) / (1000 * 60 * 60 * 24);
+  const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
 
-    //here given teh 30 days time to complete the payment
-    if (diffDays > 30) return "Overdue";   
-    if (diffDays <= 1) return "Pending";
+  const dueTx = await Transaction.findById(dueTransactionId);
+  dueTx.paidAmount = paidAmount;
 
-    return "Due";
+  if (paidAmount === 0) dueTx.paymentStatus = "PENDING";
+  else if (paidAmount < dueTx.amount) dueTx.paymentStatus = "PARTIAL";
+  else dueTx.paymentStatus = "PAID";
+
+  await dueTx.save();
+
+  if (dueTx.paymentStatus === "PAID") {
+    await Reminder.updateMany(
+      {
+        transactionId: dueTransactionId,
+        status: { $in: ["pending", "scheduled"] }
+      },
+      {
+        $set: {
+          status: "cancelled",
+          cancelledAt: new Date()
+        }
+      },
+      {}
+    );
+  }
+
+  return dueTx;
 }
-
 
 
 export async function addDue(req, res) {
   const { id: customerId } = req.params;
-  let { amount, note, invoiceId , lastDuePaymentDate } = req.body;
-
-  amount = Number(amount);
-
-  if (!amount || amount <= 0) {
-    return new APIError(400, "Amount must be a positive number").send(res);
-  }
+  let { amount, note, invoiceId } = req.body;
+  console.log(customerId, amount, note, invoiceId);
 
   try {
-   
+    amount = Number(amount);
+    if (!amount || amount <= 0) {
+      return new APIError(400, "Amount must be positive").send(res);
+    }
 
-    const customer = await Customer.findById(customerId);
+    const customer = await Customer
+      .findById(customerId)
+      .populate("paymentTerm");
+
     if (!customer) {
       return new APIError(404, "Customer not found").send(res);
     }
 
-    const previousDue = Number(customer.currentDue || 0);
-    const newDue = previousDue + amount;
+    const creditDays = customer.paymentTerm?.creditDays ?? 0;
+    console.log("creditDays",creditDays);
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + creditDays);
 
-    const tx = await Transaction.create({
+
+    const tx = await Transaction.create([{
       customerId,
       type: "DUE_ADDED",
-      amount: amount,
-      previousDue,
-      newDue,
-      metadata: { note, invoiceId, operatorId: req.user?.id || null },
-      lastDuePaymentDate
-    });
+      amount,
+      paidAmount: 0,
+      paymentStatus: "PENDING",
+      dueDate,
+      metadata: { note, invoiceId, operatorId: req.user?.id }
+    }], { });
 
-        //for now we have not added the invoice validation
-  //and the overdues are calculated based on the last transaction date only
-  //so here the lastDueDate is same as the transaction createdAt date
-    const status = calculateCustomerStatus(newDue, tx.lastDuePaymentDate || tx.createdAt);
+  
 
-    customer.currentDue = newDue;
-    customer.lastTransaction = tx._id;
-    customer.status = status;
-    await customer.save();
+    
+    const reminders= await reminderService.createForDue({ transactionId: tx[0]._id });
 
-    return new APIResponse(201, { transaction: tx, currentDue: newDue, status }).send(res);
+    customer.currentDue += amount;
+    customer.lastTransaction = tx[0]._id;
+    customer.status = customer.status === "Overdue" ? "Overdue" : "Due";
+  await customer.save();
+
+
+
+  const remainingDue = customer.currentDue; // to show in client side UI
+
+    return new APIResponse(201,{ transaction: {  ...tx[0].toObject(), remainingDue  } }).send(res);
+
   } catch (err) {
-    console.error("Error in addDue:", err);  
-    return new APIError(500, "Internal Server Error").send  (res);
+    console.error("Error in addDue:", err);
+    return new APIError(500, "Internal Server Error").send(res);
   }
 }
+
 
 export async function makePayment(req, res) {
-  const { id: customerId } = req.params;
-  let { amount, note, paymentMethod } = req.body;
-
-  amount = Number(amount);
-  if (!amount || amount <= 0) {
-    return new APIError(400, "Payment amount must be a positive number").send(res);
-  }
-
+  //i have to also update the reminder money?
+  const { dueTransactionId } = req.body;
+  let { amount, note } = req.body;
   try {
-   
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      return new APIError(404, "Customer not found").send(res);
+    amount = Number(amount);
+    if (!amount || amount <= 0) {
+      return new APIError(400, "Invalid payment amount").send(res);
     }
 
-    const previousDue = Number(customer.currentDue || 0);
-    const newDue = previousDue - amount;
-    const finalNewDue = newDue;
+    const dueTx = await Transaction
+      .findById(dueTransactionId)
 
-    const [tx] = await Transaction.create([{
-      customerId,
+    if (!dueTx || dueTx.type !== "DUE_ADDED") {
+      return new APIError(400, "Invalid due transaction").send(res);
+    }
+
+    if (dueTx.paymentStatus === "PAID") {
+      return new APIError(400, "This due is already fully paid").send(res);
+    }
+
+    const remaining = dueTx.amount - dueTx.paidAmount;
+    if (amount > remaining) {
+      return new APIError(400, "Payment exceeds remaining due").send(res);
+    }
+
+    // create payment FIRST
+    const paymentTx = await Transaction.create([{
+      customerId: dueTx.customerId,
       type: "PAYMENT",
-      amount: amount,
-      previousDue,
-      newDue: finalNewDue,
-      metadata: { note, paymentMethod, operatorId: req.user?.id || null }
-    }],);
+      amount,
+      linkedDueTransaction: dueTx._id,
+      metadata: { note, operatorId: req.user?.id }
+    }], { });
 
-    const status = calculateCustomerStatus(finalNewDue, tx.createdAt);
+    if(paymentTx){
+      //if new payment is created then update the reminder accordingly with amount
+      await Reminder.updateOne(
+        {"transactionId": new mongoose.Types.ObjectId(dueTransactionId)},
+        {
+        $set:{
+          "templateVariables.1":paymentTx.amount,
+          transactionId: new mongoose.Types.ObjectId(paymentTx._id)
+        }
+      });
 
-    customer.currentDue = finalNewDue;
-    customer.lastTransaction = tx._id;
-    customer.status = status;
-    await customer.save();
-  
-
-    return new APIResponse(201, { transaction: tx, currentDue: finalNewDue, status }).send(res);
-  } catch (err) {
-    console.error("Error in makePayment:", err);  
-    return new APIError(500, "Internal Server Error").send(res);
-  
-  }
-}
-
-export async function editDue(req, res) {
-  const { id: customerId } = req.params;
-  let { correctedDue, note } = req.body;
-
-  correctedDue = Number(correctedDue);
-  if (correctedDue === undefined || correctedDue === null || isNaN(correctedDue)) {
-    return new APIError(400, "correctedDue must be a valid number").send(res);
-  }
-
-  try {
-
-
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      return new APIError(404, "Customer not found").send(res);
     }
 
-    const previousDue = Number(customer.currentDue || 0);
-    const newDue = correctedDue;
-
-    const [tx] = await Transaction.create([{
-      customerId,
-      type: "DUE_EDITED",
-      amount: Math.abs(newDue - previousDue),
-      previousDue,
-      newDue,
-      metadata: { note, operatorId: req.user?.id || null }
-    }]);
-
-    const status = calculateCustomerStatus(newDue, tx.createdAt);
-
-    customer.status = status;
-    customer.currentDue = newDue;
-    customer.lastTransaction = tx._id;
-    await customer.save();
- 
-
-    return new APIResponse(200, { transaction: tx, currentDue: newDue }).send(res);
-  } catch (err) {
+    // THEN recalculate
+    const updatedDue = await recalculateDue(dueTx._id);
     
-    console.error("Error in editDue:", err);  
+  const cus = await Customer.findByIdAndUpdate(
+      dueTx.customerId,
+      {
+        $inc: { currentDue: -amount },
+        $set: { lastTransaction: paymentTx._id }
+      },
+      { }
+    );
+
+    return new APIResponse(200, {
+      payment: paymentTx[0],
+      due: {
+        ...updatedDue.toObject(),
+        //remaining due is alreadly there is updatedDue
+      },
+    }).send(res);
+
+  } catch (err) {
+    console.error("Error in makePayment:", err);
     return new APIError(500, "Internal Server Error").send(res);
   }
-}
+};
 
-export async function getTransactions(req, res, next) {
+export async function getTransactions(req, res) {
   const { id: customerId } = req.params;
-  const { limit = 50, page = 1 } = req.query;
-  const skip = (Number(page) - 1) * Number(limit);
 
   try {
-    const txs = await Transaction.find({ customerId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit))
-      .lean();
+    const dues = await Transaction.find({ customerId, type: "DUE_ADDED" })
+      .sort({ createdAt: -1 });
 
-    const total = await Transaction.countDocuments({ customerId });
+    const dueIds = dues.map(d => d._id);
 
-    return new APIResponse(200, { transactions: txs, total, page: Number(page) }).send(res);
+    const payments = await Transaction.find({ linkedDueTransaction: { $in: dueIds } });
+
+    const paymentMap = {};
+    for (const p of payments) {
+      const key = p.linkedDueTransaction.toString();
+      if (!paymentMap[key]) paymentMap[key] = [];
+      paymentMap[key].push(p);
+    }
+
+    const result = dues.map(due => {
+      const obj = due.toObject({ virtuals: true });
+      obj.payments = paymentMap[due._id.toString()] || [];
+      return obj;
+    });
+
+    return new APIResponse(200, { dues: result }).send(res);
   } catch (err) {
-    console.error("Error in getTransactions:", err);  
+    console.error("Error in getTransactions:", err);
     return new APIError(500, "Internal Server Error").send(res);
   }
-}
-
+};
 
