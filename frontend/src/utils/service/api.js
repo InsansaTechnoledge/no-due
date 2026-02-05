@@ -11,6 +11,9 @@ const getBaseURL=()=>{
     return PRODUCTION_SERVERS[currentServerIndex] 
 };
 
+console.log(getBaseURL());
+
+
 const api = axios.create({
     baseURL: getBaseURL(),
     headers: {
