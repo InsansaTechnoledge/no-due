@@ -150,7 +150,7 @@ const handleOnCustomerSelect = (customer) => {
 
 
   useEffect(() => {
-    socketRef.current = io(import.meta.env.VITE_BACKEND_URL, { withCredentials: true }); //will not change on refresh
+    socketRef.current = io(import.meta.env.API_BASE_URL, { withCredentials: true }); //will not change on refresh
     const socket = socketRef.current;
     //make sure only connect if it is authenticated
 
