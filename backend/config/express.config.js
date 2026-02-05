@@ -1,6 +1,6 @@
 import express from "express";
 import routes from "../routes/routes.js";
-import { corsMiddleware, corsPreflight } from "./corsConfig.js";
+import { corsMiddleware } from "./corsConfig.js";
 import cookieParser from "cookie-parser";
 import { sessionMiddleware } from "./sessionConfig.js";
 import passport from "../utils/passportSetup/passportSetup.js";
@@ -14,7 +14,7 @@ app.set("trust proxy", 1);
 app.use(corsMiddleware());
 
 // Preflight handling in corsConfig.js
-app.use(corsPreflight);
+// app.use(corsPreflight);
 
 //body parser
 app.use(express.json());

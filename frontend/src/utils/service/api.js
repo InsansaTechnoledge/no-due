@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const PRODUCTION_SERVERS=['https://backendnodue.rvpuni.in'];
+const PRODUCTION_SERVERS=['https://backendnodue.rvpuni.in/api'];
 
 let currentServerIndex=0;
 
@@ -12,7 +12,6 @@ const getBaseURL=()=>{
 };
 
 console.log(getBaseURL());
-
 
 const api = axios.create({
     baseURL: getBaseURL(),
