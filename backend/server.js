@@ -27,7 +27,7 @@ const startServer = async () => {
         const server = http.createServer(app);
         // initSocket(server); //confirm await will work here or not?
 
-        // await jobForRemainder();
+        await jobForRemainder();
 
         app.get('/status', (req, res) => {
             res.send('API is running...');
