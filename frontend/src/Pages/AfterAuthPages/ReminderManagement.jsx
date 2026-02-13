@@ -52,6 +52,7 @@ export default function ReminderManagement() {
       console.log(res);
       const output = res.data.data;
 
+      console.log("output.data",output.data);
       setData(output.data || []);
       setPagination(prev => ({ ...prev, ...output.meta }));
 
@@ -78,7 +79,7 @@ export default function ReminderManagement() {
         company: "-", // not present yet
       },
 
-      dueAmount: r?.customerId?.currentDue || 0,
+      dueAmount: r?.transactionId?.amount || 0, // have to add here that specific due amount
 
       sendAt: r.scheduledFor,
 

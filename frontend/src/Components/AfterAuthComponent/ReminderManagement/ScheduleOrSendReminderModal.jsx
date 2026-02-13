@@ -167,6 +167,7 @@ export default function ScheduleOrSendReminderModal({
   };
 
   const handleSelectTransaction = (tx) => {
+    console.log('clicked on select transaction', tx)
     setSelectedTransaction(tx);
   }
 
@@ -241,12 +242,12 @@ export default function ScheduleOrSendReminderModal({
 
         {/* Body: 3-Column Layout */}
         <div className="flex-1 overflow-hidden">
-          <div className="grid h-full grid-cols-1 md:grid-cols-12 divide-x divide-gray-200">
+          <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-12 divide-x divide-gray-200">
 
             {/* -------------------------------------------------------------
                 COLUMN 1: Customer List (Span 3)
                ------------------------------------------------------------- */}
-            <div className="col-span-1 md:col-span-3 flex flex-col bg-gray-50/50">
+            <div className="col-span-1 md:col-span-3 flex flex-col bg-gray-50/50 min-h-0">
               <div className="p-4 border-b bg-white">
                 <div className="relative">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -300,7 +301,7 @@ export default function ScheduleOrSendReminderModal({
             {/* -------------------------------------------------------------
                 COLUMN 2: Transaction List (Span 4)
                ------------------------------------------------------------- */}
-            <div className="col-span-1 md:col-span-4 flex flex-col bg-white">
+            <div className="col-span-1 md:col-span-4 flex flex-col bg-white min-h-0">
               <div className="border-b px-6 py-4 flex items-center gap-2">
                 <CreditCard size={18} className="text-gray-400" />
                 <h3 className="font-semibold text-gray-700">Transactions</h3>
@@ -357,108 +358,129 @@ export default function ScheduleOrSendReminderModal({
             {/* -------------------------------------------------------------
                 COLUMN 3: Actions & Preview (Span 5)
                ------------------------------------------------------------- */}
-            <div className="col-span-1 md:col-span-5 flex flex-col bg-gray-50/30 overflow-y-scroll">
-              <div className="border-b px-6 py-4 flex items-center gap-2">
-                <h3 className="font-semibold text-gray-700">Preview & Send</h3>
+
+
+           <div className="col-span-1 md:col-span-5 flex flex-col bg-gray-50/30 h-full min-h-0">
+
+  {/* ================= HEADER ================= */}
+  <div className="border-b px-6 py-4 flex items-center gap-2 shrink-0">
+    <h3 className="font-semibold text-gray-700">Preview & Send</h3>
+  </div>
+
+
+  {/* ================= SCROLLABLE AREA ================= */}
+  <div className="flex-1 overflow-y-auto p-6 min-h-0">
+
+    {!selectedTransaction ? (
+      <div className="flex h-full flex-col items-center justify-center text-gray-400 gap-3">
+        <Send size={48} className="opacity-20" />
+        <p className="text-sm">Select a transaction to proceed</p>
+      </div>
+    ) : (
+      <div className="space-y-6">
+
+        {/* Mode Selection */}
+        <div className="rounded-xl border bg-white p-1 shadow-sm">
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              onClick={() => setMode("schedule")}
+              className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all
+                ${mode === "schedule"
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50"
+                }`}
+            >
+              <Calendar size={16} /> Schedule
+            </button>
+
+            <button
+              onClick={() => setMode("now")}
+              className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all
+                ${mode === "now"
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50"
+                }`}
+            >
+              <Send size={16} /> Send Now
+            </button>
+          </div>
+        </div>
+
+        {mode === "schedule" && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Schedule Date
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduleDate}
+              onChange={(e) => setScheduleDate(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            />
+          </div>
+        )}
+
+        {/* Template */}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Template
+          </label>
+
+          <select
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
+          >
+            <option value="">Select a template...</option>
+            {Object.values(TEMPLATE_OPTIONS).map((tmpl) => (
+              <option key={tmpl.value} value={tmpl.value}>
+                {tmpl.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Preview */}
+        <div>
+          <label className="mb-2 block text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Message Preview
+          </label>
+
+          <div className="relative rounded-xl border border-gray-200 bg-white max-h-48">
+            <div className="absolute top-0 left-0 h-1 w-full bg-green-500"></div>
+            <div className="p-4 max-h-40 overflow-y-auto">
+              <div className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">
+                {previewMessage}
               </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                {!selectedTransaction ? (
-                  <div className="flex h-full flex-col items-center justify-center text-gray-400 gap-3">
-                    <Send size={48} className="opacity-20" />
-                    <p className="text-sm">Select a transaction to proceed</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-
-                    {/* Mode Selection */}
-                    <div className="rounded-xl border bg-white p-1 shadow-sm">
-                      <div className="grid grid-cols-2 gap-1">
-                        <button
-                          onClick={() => setMode("schedule")}
-                          className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all
-                                          ${mode === "schedule" ? "bg-green-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}
-                                      `}
-                        >
-                          <Calendar size={16} /> Schedule
-                        </button>
-                        <button
-                          onClick={() => setMode("now")}
-                          className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all
-                                          ${mode === "now" ? "bg-green-600 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}
-                                      `}
-                        >
-                          <Send size={16} /> Send Now
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Date Picker (if Schedule) */}
-                    {mode === 'schedule' && (
-                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <label className="mb-1 block text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule Date</label>
-                        <input
-                          type="datetime-local"
-                          value={scheduleDate}
-                          onChange={(e) => setScheduleDate(e.target.value)}
-                          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                        />
-                      </div>
-                    )}
-
-                    {/* Template Selection */}
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Template
-                        <span className="ml-2 text-green-600 text-[10px] font-normal normal-case">(Auto-selected based on due date)</span>
-                      </label>
-                      <select
-                        value={template}
-                        onChange={(e) => setTemplate(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                      >
-                        <option value="">Select a template...</option>
-                        {Object.values(TEMPLATE_OPTIONS).map((tmpl) => (
-                          <option key={tmpl.value} value={tmpl.value}>
-                            {tmpl.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Preview Box */}
-                    <div>
-                      <label className="mb-2 block text-xs font-medium text-gray-500 uppercase tracking-wider">Message Preview</label>
-                      <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white">
-                        <div className="absolute top-0 left-0 h-1 w-full bg-green-500"></div>
-                        <div className="p-4">
-                          <div className="whitespace-pre-line text-sm text-gray-700 leading-relaxed">
-                            {previewMessage}
-                          </div>
-                        </div>
-                        <div className="bg-gray-50 p-2 text-center text-[10px] text-gray-400 uppercase tracking-widest border-t">
-                          WhatsApp Preview
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
-                )}
-              </div>
-
-              {/* Footer Actions */}
-              <div className="border-t bg-white p-4">
-                <button
-                  onClick={handleSubmit}
-                  disabled={!selectedTransaction || (mode === 'schedule' && !scheduleDate)}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white shadow-lg shadow-green-200 transition-all hover:scale-[1.02] hover:bg-green-700 disabled:scale-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-                >
-                  <Send size={18} />
-                  {mode === 'now' ? 'Send Reminder Now' : 'Schedule Reminder'}
-                </button>
-              </div>
-
             </div>
+            <div className="bg-gray-50 p-2 text-center text-[10px] text-gray-400 uppercase tracking-widest border-t">
+              WhatsApp Preview
+            </div>
+          </div>
+        </div>
+
+      </div>
+    )}
+  </div>
+
+
+  {/* ================= FIXED FOOTER ================= */}
+  {selectedTransaction && (
+    <div className="border-t bg-white p-4 shrink-0">
+      <button
+        onClick={handleSubmit}
+        disabled={!selectedTransaction || (mode === "schedule" && !scheduleDate)}
+        className="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white shadow-lg shadow-green-200 transition-all hover:scale-[1.02] hover:bg-green-700 disabled:opacity-50"
+      >
+        <Send size={18} />
+        {mode === "now" ? "Send Reminder Now" : "Schedule Reminder"}
+      </button>
+    </div>
+  )}
+
+</div>
+
+
 
           </div>
         </div>
