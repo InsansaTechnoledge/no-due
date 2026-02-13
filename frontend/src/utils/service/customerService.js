@@ -5,6 +5,7 @@ export const getCustomers = async ({ page = 1, limit = 10 } = {}) => {
 };
 
 export const createCustomers = async (formData) => {
+    console.log("submitting the data:",formData)
     const response = await api.post(`/v1/customers`, formData);
     return response.data;
 };

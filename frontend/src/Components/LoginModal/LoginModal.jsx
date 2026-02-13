@@ -24,7 +24,7 @@ export default function LoginModal({ open, onClose }) {
 
   const [err, setErr] = useState({});
   const [Loading, setLoading] = useState(true);
-  const { setUser, setIsUserLoggedOut } = useAuth();
+  const { user, setUser, setIsUserLoggedOut } = useAuth();
 
   useEffect(() => {
     if (!open) return;
@@ -158,19 +158,20 @@ export default function LoginModal({ open, onClose }) {
           email: email.trim(),
           password: pw
         });
+
+        console.log(response);
+
         if (response.status === 200) {
           setUser(response.data.user);
           setIsUserLoggedOut(false);
           localStorage.setItem('isUserLoggedIn', 'true');
-          const userdata = await checkAuth();
-          setUser(userdata.data.user);
+          const userdata = await checkAuth(); // it will fetch the current user logged in data
+          setUser(userdata.data.user); // will update the user data in the state
+          
           resetForm();
           onClose();
 
-          if (user.isProfileCompleted === false)
-            navigate('/nodue/user-profile');
-          else
-            navigate('/nodue/customer-master');
+          navigate('/nodue/customer-master');
 
 
         }

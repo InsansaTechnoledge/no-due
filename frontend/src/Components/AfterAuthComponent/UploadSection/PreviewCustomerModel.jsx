@@ -25,9 +25,9 @@ const handleContinue = () => {
 
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-start py-12 z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-start py-12 z-50 overflow-y-auto ">
 
-      <div className="bg-white w-[90%] max-w-4xl rounded-lg shadow-lg p-6 relative">
+      <div className="bg-white w-[90%] max-w-4xl rounded-lg shadow-lg p-6 relative max-h-[85vh] flex flex-col">
 
         {/* Close Button */}
         <button onClick={handleClose} className="absolute top-3 right-3 bg-white rounded-2xl shadow-[0_8px_10px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_12px_rgba(0,0,0,0.4)] text-gray-600 hover:text-gray-800 flex items-center justify-center cursor-pointer">
@@ -46,7 +46,7 @@ const handleContinue = () => {
         </p>
 
         {/* Dynamic Editable Table */}
-        <div className="overflow-x-auto border rounded-lg">
+        <div className="overflow-x-auto border rounded-lg flex-1">
           <table className="w-full text-left text-sm">
 
             {/* Table Header */}
