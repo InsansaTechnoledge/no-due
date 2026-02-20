@@ -402,8 +402,8 @@ const CustomerTable = () => {
                 </td>
                 {/* COMMITTED_THIS_WEEK => Committed This Week*/}
                 <td className="px-2 py-4 whitespace-nowrap text-gray-700">
-                  {c.lastTransaction?.commitmentStatus
-                    ? c.lastTransaction.commitmentStatus.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+                  {c.feedback
+                    ? c.feedback.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
                     : "-"}
                 </td>
                 <td >

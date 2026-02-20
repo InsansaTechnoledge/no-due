@@ -9,38 +9,46 @@ import whatsappMessage from "../../model/whatsappMessage.modal.js";
 import Customer from "../../model/customer.model.js";
 
 export const handleWhatsappEvent = async (payload) => {
+  console.log('webhook received from the user');
   const entry = payload?.entry?.[0];
   if (!entry) return;
 
+  console.log("payload", payload?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]); // statuses - >messages
+
   // Handle Status Updates (Sent, Delivered, Read, Failed)
-  const statusUpdate = entry?.changes?.[0]?.value?.statuses?.[0];
+  const statusUpdate = entry?.changes?.[0]?.value?.messages?.[0];
   if (statusUpdate) {
-    const { id, status, errors } = statusUpdate;
+    console.log('status update', statusUpdate);
+    const { id, button } = statusUpdate;
     // console.log(`[WhatsApp Status] Message ${id} is ${status}`);
-    await whatsappAuditService.updateMessageStatus(id, status, errors);
-    return;
+    //have to check the passed parameters
+    // await whatsappAuditService.updateMessageStatus(id, button, errors);
+    // return; doubt here
   }
 
   const intent = parseWhatsappMessage(entry);
+  console.log("intent", intent, "\n");
   if (!intent) return;
+
 
   const rawMsg = entry?.changes?.[0]?.value?.messages?.[0];
 
   // Get merchant credentials from customer
   const customer = await Customer.findOne({ mobile: intent.from }).populate('CustomerOfComapny');
   const merchant = customer?.CustomerOfComapny;
-  
+
   const mercantCredentials = {
     accessToken: merchant?.whatsapp?.accessToken,
     phoneNumberId: merchant?.whatsapp?.phoneNumberId
   };
 
   if (rawMsg?.id && mercantCredentials.accessToken && mercantCredentials.phoneNumberId) {
+    //read receipt
     await whatsappService.markRead(rawMsg.id, mercantCredentials.accessToken, mercantCredentials.phoneNumberId);
   }
 
 
-  // Check for duplicate response to the same message
+  // Check for duplicate response to the same message// need to verify this one
   if (intent.context?.id) {
     const existingResponse = await whatsappMessage.findOne({
       responseToMessageId: intent.context.id
@@ -77,6 +85,11 @@ export const handleWhatsappEvent = async (payload) => {
         lastInteraction: new Date()
       }
     );
+
+    //also update the last transaction status
+
+
+    console.log("updated the status of message received");
   } catch (err) {
     console.error("Error updating customer feedback:", err);
   }
@@ -89,14 +102,16 @@ export const handleWhatsappEvent = async (payload) => {
 
     //will send menu from pre defined templates 
     return sendMainMenu(intent.from, mercantCredentials);
-  } else if (intent.type === "LIST") {
-    // List action routing seprately
+  } else if (intent.type === "LIST" || intent.type === "BUTTON") {
+    // List & Button action routing seprately
     routeAction(intent, mercantCredentials);
   }
 };
 
 const routeAction = async (intent, mercantCredentials) => {
   const { actionId, from } = intent;
+
+  //have to update the action Id to use it like chat bot
   console.log(`User ${from} selected action Id : ${actionId}`);
 
   switch (actionId) {
@@ -140,7 +155,7 @@ Just type *Hi* to restart your conversation👋 `;
 
 
     // Reminder Responses
-    case "PAY_TODAY":
+    case "PAY_TODAY": 
     case "WILL_PAY_TODAY":
     case "PAID_TODAY":
     case "PAY_WEEK":
@@ -148,7 +163,11 @@ Just type *Hi* to restart your conversation👋 `;
     case "NEED_STATEMENT":
       console.log(`User ${from} selected options for ${actionId}`);
       try {
-        await updateTransactionStatus({ from, actionId });
+        await updateTransactionStatus({
+          from,
+          actionId,
+          contextId: intent.context?.id // Pass the context ID (wamid of original message)
+        });
       } catch (error) {
         console.error("Error processing whatsapp response:", error);
       }

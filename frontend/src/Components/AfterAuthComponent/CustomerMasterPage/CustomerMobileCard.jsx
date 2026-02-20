@@ -55,6 +55,10 @@ const CustomerMobileCard = () => {
           //for each keys
           let val = row[header];
 
+          if(header==='mobile'){
+            val = `="${val}"`;
+          }
+
           if (val && typeof val === 'object') {
             if (header === 'paymentTerm') {
               val = val.name || '';
