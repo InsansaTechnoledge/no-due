@@ -166,12 +166,66 @@ class WhatsappService {
         }
       });
 
-      console.log(response);
+      console.log(response.status);
       return response.data;
     } catch (error) {
       console.error('Error sending template message:', error.response?.data || error.message);
       throw error.response?.data || new Error('Failed to send template message');
     }
+  }
+
+
+  async sendTextMessage({ to, text }) {
+
+    const payload = {
+      messaging_product: "whatsapp",
+      to,
+      recipient_type: "individual",
+      type: "text",
+      text: {
+        body: text
+      }
+    };
+    try {
+
+      const response = await axios.post(this.apiUrl, payload, this.headers);
+
+      // Audit Log
+      // await whatsappAuditService.logMessage({
+      //   mobile: to,
+      //   direction: "OUTBOUND",
+      //   type: "text",
+      //   text: text,
+      //   whatsappMessageId: response.data.messages?.[0]?.id,
+      //   status: "sent"
+      // });
+
+      return { success: true, data: response?.data };
+
+    } catch (error) {
+      console.log(error.response);
+      throw new Error("Failed to send Text message");
+    }
+  }
+
+async markRead(messageId){
+    console.log("marking as read");
+     return axios.post(`${this.baseUrl}/${process.env.PhoneNmId}/messages`,
+      //payload
+    {
+      messaging_product: "whatsapp",
+      status: "read",
+      message_id: messageId
+      
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+
   }
 }
 
