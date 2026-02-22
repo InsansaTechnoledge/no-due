@@ -1,13 +1,12 @@
 export default function registerSocketHandlers(io, socket) {
-    console.log("Socket connected:", socket.id);
+    const user = socket.request.user;
+    console.log(`[Socket] Authenticated user connected: ${user.email} (${socket.id})`);
 
-    // User joins their own room to receive private notifications
-    socket.on("join_user", ({ userId }) => {
-        if (!userId) return;
-        socket.data.userId = userId;
-        socket.join(`${userId}`);
-        console.log(`[Socket] User ${userId} joined their private room.`);
-    });
+    // Automatically join the user to their private room upon connection
+    const userId = user._id.toString();
+    socket.join(userId);
+    socket.data.userId = userId;
+    console.log(`[Socket] User ${userId} automatically joined their private room.`);
 
     // Handle marking a specific notification as read from the client side if needed
     socket.on("notification_read", ({ notificationId }) => {
