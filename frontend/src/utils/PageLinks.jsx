@@ -23,9 +23,9 @@ import AuthSuccess from "../Components/auth/AuthSuccess";
 import AuthRoute from "../Layouts/AuthRoutes";
 import { useAuth } from "../context/AuthContext";
 import CustomerDetail from "../Pages/CustomerDetail";
-import PaymentReminder from "../Pages/PaymentReminder/PaymentReminder"
-import WhatsappChats from "../Pages/WhatsappChats/WhatsappChats"
-import AllTransaction from "../Pages/AfterAuthPages/AllTransaction"
+import PaymentReminder from "../Pages/PaymentReminder/PaymentReminder";
+import WhatsappChats from "../Pages/WhatsappChats/WhatsappChats";
+import AllTransaction from "../Pages/AfterAuthPages/AllTransaction";
 import TransactionHistoryDuePage from "../Components/AfterAuthComponent/CustomerMasterPage/Transactions";
 import WhatsappConnectivity from "../Pages/AfterAuthPages/WhatsappConnectivity";
 
@@ -35,32 +35,39 @@ const PageLinks = () => {
 
   const { loading } = useAuth();
 
-
   if (loading) {
     return (
       <>
         <LoadingPage />
       </>
-    )
-  };
+    );
+  }
 
   return (
     <Routes location={location}>
       {/* PUBLIC AREA */}
       <Route element={<BeforeAuthLayout />}>
-        <Route path='/' element={<Hero />} />
-        <Route path="/contact" element={<PageShell keyId={keyId}><Contact /></PageShell>} />
-        <Route path="/login" element={<Navigate to="/" state={{ openLogin: true }} replace />} />
+        <Route path="/" element={<Hero />} />
+        <Route
+          path="/contact"
+          element={
+            <PageShell keyId={keyId}>
+              <Contact />
+            </PageShell>
+          }
+        />
+        <Route
+          path="/login"
+          element={<Navigate to="/" state={{ openLogin: true }} replace />}
+        />
       </Route>
 
-      <Route path='/google-success' element={<AuthSuccess />} />
-
+      <Route path="/google-success" element={<AuthSuccess />} />
 
       {/* AUTH AREA */}
       <Route
         path="/nodue"
         element={
-          //authRoute works as privateRoute
           <AuthRoute>
             <AfterAuthLayout />
           </AuthRoute>
@@ -84,8 +91,6 @@ const PageLinks = () => {
         <Route path="whatsapp-chat" element={<WhatsappChats />} />
         <Route path="all-transactions" element={<AllTransaction />} />
         <Route path="settings/whatsapp" element={<WhatsappConnectivity />} />
-
-
       </Route>
 
       <Route path="*" element={<Error404Page />} />
