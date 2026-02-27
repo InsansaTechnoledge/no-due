@@ -1,0 +1,229 @@
+import React, { useState } from "react";
+import { toast } from "react-toastify";
+import { createCustomers } from "../../../utils/service/customerService";
+
+const CustomerCreationPage = ({ paymentTerms }) => {
+  const formConfig = [
+    {
+      name: "name",
+      label: "Customer Name",
+      type: "text",
+      placeholder: "Enter customer name",
+      required: true,
+    },
+    {
+      name: "mobile",
+      label: "Mobile Number",
+      type: "number",
+      placeholder: "Enter mobile number",
+      required: true,
+    },
+    {
+      name: "email",
+      label: "Email Address",
+      type: "email",
+      placeholder: "Enter email",
+    },
+    {
+      name: "currentDue",
+      label: "Current Due Amount",
+      type: "number",
+      disabled: true,
+      placeholder: "₹ 0.00",
+    },
+    {
+      name: "gender",
+      label: "Gender",
+      type: "select",
+      options: [
+        { label: "Select gender", value: "" },
+        { label: "Male", value: "male" },
+        { label: "Female", value: "female" },
+      ],
+      required: true,
+    },
+    {
+      name: "paymentTerm",
+      label: "Payment Term",
+      type: "select",
+      options: [
+        { label: "Select payment term", value: "" },
+        ...paymentTerms.map((pt) => ({
+          label: `${pt.name} - ${pt.creditDays} days`,
+          value: pt._id,
+        })),
+      ],
+      placeholder: "Enter payment terms",
+      required: true,
+    },
+  ];
+
+  const initialFormData = formConfig.reduce((acc, field) => {
+    acc[field.name] = ""; //making empty
+    return acc;
+  }, {});
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "mobile") {
+      let mobile = value.replace("/\D/g", "").slice(0, 10); // only allowing 10 digit number
+
+      setFormData((prev) => ({ ...prev, [name]: mobile }));
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("formData", formData);
+
+    try {
+      setLoading(true);
+
+      await createCustomers({
+        ...formData,
+        currentDue: Number(formData.currentDue) || 0,
+      });
+
+      console.log("Submitting:", formData);
+
+      toast.success("Customer created successfully");
+      setFormData(initialFormData); // reset form
+    } catch (error) {
+      const errors = error?.response?.data?.errors;
+      if (errors) {
+        const formattedErrors = Object.entries(errors).map(
+          ([field, message]) => {
+            if (message.includes("Cast to ObjectId failed")) {
+              return "Please select a valid payment term";
+            }
+
+            if (message.includes("is not a valid enum value")) {
+              return `Please select a valid ${field}`;
+            }
+
+            return message; // fallback
+          },
+        );
+
+        toast.error(formattedErrors[0]); // show first error
+      } else {
+        toast.error("Failed to create customer");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ------------------ UI ------------------ */
+  return (
+    <div className="min-w-0 w-full">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">Create Customer</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Add a new customer to manage dues and payments
+        </p>
+      </div>
+
+      {/* Form Card */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {formConfig.map((field) => (
+              <div key={field.name} className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-gray-700">
+                  {field.label}
+                  {field.required && (
+                    <span className="text-red-500 ml-1">*</span>
+                  )}
+                </label>
+
+                {field.type === "select" ? (
+                  <select
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 
+                         focus:border-gray-300 focus:bg-gray-100 border-transparent 
+                         transition-all duration-200 outline-none"
+                  >
+                    {field.options.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : field.name === "mobile" ? (
+                  <div className="flex">
+                    <span
+                      className=" border shadow-accertinity inline px-4 py-3 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-gray-300 
+                         focus:border-gray-300 focus:bg-gray-100 border-transparent "
+                    >
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      name="mobile"
+                      value={formData.mobile}
+                      onChange={handleChange}
+                      placeholder={field.placeholder}
+                      inputMode="numeric"
+                      className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-gray-300 
+                         focus:border-gray-300 focus:bg-gray-100 border-transparent 
+                         transition-all duration-200 outline-none"
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type={field.type}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleChange}
+                    placeholder={field.placeholder}
+                    disabled={field.name === "currentDue"}
+                    className="w-full border shadow-accertinity inline px-4 py-3 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 
+                         focus:border-gray-300 focus:bg-gray-100 border-transparent 
+                         transition-all duration-200 outline-none"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setFormData(initialFormData)}
+              className="px-5 py-2.5 text-sm font-medium text-gray-700
+                         border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Reset
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-5 py-2.5 text-sm font-medium text-white
+                         component-button-green disabled:opacity-60"
+            >
+              {loading ? "Creating..." : "Create Customer"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CustomerCreationPage;
