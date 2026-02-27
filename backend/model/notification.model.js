@@ -10,7 +10,7 @@ const notificationSchema = new Schema({
     relatedCustomerId: {
         type: Types.ObjectId,
         ref: "Customer",
-        required: true
+        // required: true
     },
     title: {
         type: String,

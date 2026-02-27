@@ -126,7 +126,7 @@ export default function LoginModal({ open, onClose }) {
 
     setErr(newErrors);
 
-    if (Object.values(newErrors).some((err) => err)) {
+    if (isSignUp && Object.values(newErrors).some((err) => err)) {
       setLoading(false);
       return; // Stop submit
     }
@@ -349,7 +349,7 @@ export default function LoginModal({ open, onClose }) {
               {showPw ? "HIDE" : "SHOW"}
             </button>
 
-          {err.password &&isSignUp  && <p className="text-xs font-normal text-red-600 min-h-[16px]">{err.password}</p>}
+          {err.password&& isSignUp && <p className="text-xs font-normal text-red-600 min-h-[16px]">{err.password}</p>}
           </div>
 
 
@@ -406,7 +406,7 @@ export default function LoginModal({ open, onClose }) {
               onClick={submit}
               className="rounded bg-teal-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-teal-700 transition"
             >
-              {isSignUp ? "Sign up" : "Next"}
+              {isSignUp ? "Sign up" : "Login"}
             </button>
           </div>
         </div>

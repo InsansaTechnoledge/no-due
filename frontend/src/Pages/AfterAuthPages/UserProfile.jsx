@@ -181,7 +181,7 @@ export default function UserProfile() {
                 <p className="text-sm text-gray-600">Manage your profile and preferences</p>
               </div>
             </div>
-            {user.whatsapp.status!='connected' ?
+            {user?.whatsapp?.status!='connected' ?
               <div className="flex items-center gap-3">
               <Link to="/nodue/settings/whatsapp" className="inline-flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                 Connect WhatsApp Account

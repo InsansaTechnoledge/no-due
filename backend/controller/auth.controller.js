@@ -66,19 +66,20 @@ export const localLogin = (req, res) => {
       return new APIError(500, ['Authentication failed', err.message]).send(res);
     }
     if (!user) {
-      console.log("info", info); //not returning exact message
-      return new APIError(401, ['Invalid Credentials']).send(res);
+      //not returning exact message
+      return new APIError(401, ['Authentication failed']).send(res);
     }
     const rememberMe = !!req.body.rememberMe;
     const lastLogin = Date.now();
 
     req.session.regenerate((err) => {
       if (err) {
-        return new APIError(500, ['Session regeneration failed']).send(res);
+        //session generation failed
+        return new APIError(500, ['Authentication failed']).send(res);
       }
       req.login(user, async (err) => {
         if (err) {
-          return new APIError(500, ['Login failed']).send(res);
+          return new APIError(500, ['Authentication failed']).send(res);
         }
         setMaxAge(req, rememberMe);
         try {
@@ -96,7 +97,7 @@ export const localLogin = (req, res) => {
           });
 
         } catch (err) {
-          return new APIError(500, ['Session save failed']).send(res);
+          return new APIError(500, ['Authentication failed']).send(res);
         }
       });
     });

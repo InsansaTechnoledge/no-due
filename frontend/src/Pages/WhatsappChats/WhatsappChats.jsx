@@ -6,13 +6,13 @@ import ChatHeader from "./chat/ChatHeader";
 import ChatInput from "./chat/ChatInput"
 import ChatMessages from "./chat/ChatMessage"
 import EmptyChatState from "./chat/EmplyChatState"
-import { io } from "socket.io-client";
+import { socket } from "../../socket/index.js";
 import { whatsappReply, getChatHistory } from "../../utils/service/whatsappService.js"
 import { useAuth } from ".././../context/AuthContext.jsx"
 import { toast } from "react-toastify";
 
 export default function WhatsappChats() {
-  const socketRef = useRef(null); //one time
+  const socketRef = useRef(socket); // Use shared socket instance
   const currentCustomerRef = useRef(null);
   const [customers, setCustomers] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -150,59 +150,53 @@ export default function WhatsappChats() {
 
 
   useEffect(() => {
-    socketRef.current = io(import.meta.env.API_BASE_URL, { withCredentials: true }); //will not change on refresh
-    const socket = socketRef.current;
-    //make sure only connect if it is authenticated
+    const s = socketRef.current;
 
-    socket.on("connect", () => {
-      console.log("connected", socket.id);
-    })
+    // Ensure connected
+    if (!s.connected) {
+      s.connect();
+    }
 
-    socket.on("welcome", (d) => {
-      console.log("Welcome:", d);
-    })
-
-    socket.on("new_message", (msg) => {
+    const onConnect = () => console.log("connected", s.id);
+    const onWelcome = (d) => console.log("Welcome:", d);
+    const onNewMessage = (msg) => {
       console.log("new_message", msg);
       setMessages((prev) => [...prev, { id: msg.messageId, text: msg.text, timestamp: msg.timestamp }]);
-      //mark that read
-      markAsRead(msg.mobile)
-    });
-
-    socket.on("new_message_preview", (data) => {
+      markAsRead(msg.mobile);
+    };
+    const onNewMessagePreview = (data) => {
       setCustomers(prev =>
         prev.map(c => {
-          //if not matching the customer from comming data then return as it is
           if (c.mobile !== data.mobile) return c;
-
-          const isActive =
-            currentCustomerRef.current &&
-            currentCustomerRef.current.mobile === data.mobile;
-          //now matching customer with comming data then update only count if it is Active
+          const isActive = currentCustomerRef.current && currentCustomerRef.current.mobile === data.mobile;
           return {
             ...c,
             lastMessage: data.text,
             updatedAt: new Date().toISOString(),
-            unreadCount: isActive
-              ? c.unreadCount
-              : (c.unreadCount || 0) + 1,
+            unreadCount: isActive ? c.unreadCount : (c.unreadCount || 0) + 1,
           };
         })
       );
-    });
-
-    socket.on("message_failed", data => {
-      console.log("message failed comming");
+    };
+    const onMessageFailed = data => {
+      console.log("message failed coming");
       toast.error(data?.message);
-    })
+    };
 
-
-
+    s.on("connect", onConnect);
+    s.on("welcome", onWelcome);
+    s.on("new_message", onNewMessage);
+    s.on("new_message_preview", onNewMessagePreview);
+    s.on("message_failed", onMessageFailed);
 
     return () => {
-      socket.disconnect();
-    }
-
+      s.off("connect", onConnect);
+      s.off("welcome", onWelcome);
+      s.off("new_message", onNewMessage);
+      s.off("new_message_preview", onNewMessagePreview);
+      s.off("message_failed", onMessageFailed);
+      // Do NOT disconnect shared socket
+    };
   }, []);
 
 
