@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useSearchParams } from "react-router-dom";
-import { toast } from "react-toastify";
+
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquare,

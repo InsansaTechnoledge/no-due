@@ -186,7 +186,13 @@ const userSchema = new Schema(
       type: Types.ObjectId,
       ref: "SubscriptionPlan",
     },
-    whatsapp: whatsappSchema,
+    whatsapp: { type: whatsappSchema, default: () => ({}) },
+    twoFA: {
+      enabled: { type: Boolean, default: false },
+      secret: { type: String, select: false },
+      backupCodes: { type: [String], select: false },
+      enabledAt: { type: Date },
+    },
   },
   { timestamps: true },
 );
