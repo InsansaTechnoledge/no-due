@@ -23,6 +23,10 @@ const generateAvatar = async (fname, lname) => {
 export const registerUser = async (req, res) => {
   const userData = req.body;
   try {
+    const existingUser = await User.findOne({ email: userData.email });
+    if (existingUser) {
+      return new APIError(400, ["User already exists"]).send(res);
+    }
     const avatar = await generateAvatar(userData?.fname, userData?.lname); // Generate an avatar
     const savedUser = await User.create(userData);
     savedUser.profileImageUrl = avatar;

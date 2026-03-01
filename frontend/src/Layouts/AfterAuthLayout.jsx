@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import SideBar from "../Components/Navbar/AfterAuthNavBar/SideBar";
 import AfterNavbar from "../Components/Navbar/AfterAuthNavBar/AfterNavbar";
 import { socket } from "../socket/index.js";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import WhatsAppSetupOverlay from "../Pages/AfterAuthPages/WhatsAppSetupPage";
 //

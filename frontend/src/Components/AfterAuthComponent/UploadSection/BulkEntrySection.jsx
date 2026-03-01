@@ -8,9 +8,10 @@ import {
 } from "lucide-react";
 import PreviewCustomerModel from "./PreviewCustomerModel";
 import { createCustomers } from "../../../utils/service/customerService";
-import { toast } from "react-toastify";
+
 import { useNavigate } from "react-router-dom";
 import ExcelJS from "exceljs";
+import toast from "react-hot-toast";
 
 const BulkEntrySection = ({ paymentTerms }) => {
   const [showPreview, setShowPreview] = useState(false);
