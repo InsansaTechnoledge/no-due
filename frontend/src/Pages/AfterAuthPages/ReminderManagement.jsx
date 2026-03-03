@@ -15,7 +15,6 @@ import { FaWhatsapp } from "react-icons/fa";
 
 export default function ReminderManagement() {
 
-  const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [tab, setTab] = useState("all");
 
@@ -91,12 +90,10 @@ export default function ReminderManagement() {
 
     async function run() {
       try {
-        setLoading(true);
         await fetchReminders();
       } catch (error) {
         console.log(error);
       } finally {
-        setLoading(false);
         setInitialLoading(false);
       }
     }
