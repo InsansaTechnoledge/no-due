@@ -554,10 +554,11 @@ export const getCustomers = async (req, res) => {
     }
 
     const customers = await Customer.find(query)
-      .populate("lastTransaction", "commitmentStatus")
-      .populate("paymentTerm", "name")
-      .skip(offset)
-      .limit(queryLimit);
+    .populate("lastTransaction", "commitmentStatus")
+    .populate("paymentTerm", "name")
+    .populate("transactions") 
+    .skip(offset)
+    .limit(queryLimit);
 
     const total = await Customer.countDocuments(query);
     return new APIResponse(
