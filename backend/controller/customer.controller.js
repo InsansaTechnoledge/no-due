@@ -13,6 +13,7 @@ import {
 } from "../utils/reminder.templates.js";
 import PaymentTerm from "../model/PaymentTerm.model.js";
 import User from "../model/user.model.js";
+import mongoose from "mongoose";
 
 export const createCustomer = async (req, res) => {
   try {
@@ -701,35 +702,51 @@ export const deleteCustomers = async (req, res) => {
     const userId = req.user._id;
     const bodyIds = req.body;
 
-    console.log("ids to delete", bodyIds);
-
     const ids = Array.isArray(bodyIds) ? bodyIds : [bodyIds];
 
     if (!ids || ids.length === 0 || ids[0] == null) {
       return new APIError(400, ["No IDs provided for deletion"]).send(res);
     }
 
-    if (ids.length > 0) {
-      // Cascade delete: Transactions, Reminders, and Notifications
-      await Promise.all([
-        Transaction.deleteMany({ customerId: { $in: ids } }),
-        Reminder.deleteMany({ customerId: { $in: ids } }),
-        Notification.deleteMany({ relatedCustomerId: { $in: ids } }),
-      ]);
+    const validCustomers = await Customer.find(
+      { _id: { $in: ids }, CustomerOfComapny: userId },
+      { _id: 1 }
+    );
 
-      const result = await Customer.deleteMany({
-        _id: { $in: ids },
-        CustomerOfComapny: userId,
-      });
+    const validIds = validCustomers.map((c)=>c._id);
+
+    if (validIds.length === 0) {
+      return new APIError(403, ["No valid customers found"]).send(res);
+    }
+
+    
+    //ATOMICITY with cascade delete
+      let result ;
+      const session = await mongoose.startSession();
+      try {
+        session.startTransaction();
+
+        await Transaction.deleteMany({customerId:{$in:validIds}}).session(session);
+        await Reminder.deleteMany({customerId:{$in:validIds}}).session(session);
+        await Notification.deleteMany({relatedCustomerId:{$in:validIds}}).session(session);
+        result = await Customer.deleteMany({_id:{$in:validIds}}).session(session);
+
+        await session.commitTransaction();
+      } catch (err) {
+        console.log("error",err);
+        await session.abortTransaction();
+        return new APIError(500, [`Failed to delete customer${ids.length>1?'s':''}`]).send(res);
+      } finally {
+        session.endSession();
+      }
+
 
       return new APIResponse(
         200,
         result,
         `${result.deletedCount} customers and their associated data deleted`,
       ).send(res);
-    } else {
-      return new APIError(400, ["No IDs provided for deletion"]).send(res);
-    }
+    
   } catch (error) {
     console.error("Delete customer error:", error);
     return new APIError(500, [error.message || "Failed to delete customer"]).send(res);
