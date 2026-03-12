@@ -820,7 +820,10 @@ export const validateBulkCustomers = async (req, res) => {
 
       // email (optional)
       if (customer.email) {
-        const email = customer.email.toString().trim();
+        let email = customer.email.toString().trim();
+        if(typeof(customer.email)==='object'){
+          email = customer.email?.text;
+        }
         if (!EMAIL_RE.test(email) || email.length < 5 || email.length > 255) {
           errors.push({
             row,
